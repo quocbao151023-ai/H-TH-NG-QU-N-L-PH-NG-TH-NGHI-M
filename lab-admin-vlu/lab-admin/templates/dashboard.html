@@ -1,0 +1,762 @@
+{% extends "base.html" %}
+{% set active_page = "dashboard" %}
+{% set page_title = "Lịch sử dụng phòng Lab" %}
+{% set page_desc = "Theo dõi lượt đăng ký theo ngày, ca và phòng Lab. Nhấn vào thẻ Lab để xem danh sách nhóm." %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='pages.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<section class="card calendar-card">
+
+  <div class="calendar-top">
+
+    <div class="field">
+      <label for="filterLab">Phòng Lab</label>
+      <select id="filterLab" onchange="renderCalendar(); renderStats();">
+        <option value="all">Tất cả các Lab</option>
+        <option value="Lab 1">Lab 1</option>
+        <option value="Lab 2">Lab 2</option>
+        <option value="Lab 3">Lab 3</option>
+      </select>
+    </div>
+
+    <div class="calendar-head">
+      <button type="button" onclick="changeWeek(-1)" aria-label="Tuần trước">‹</button>
+      <h2 id="calendarTitle">Đang tải lịch...</h2>
+      <button type="button" onclick="changeWeek(1)" aria-label="Tuần sau">›</button>
+    </div>
+
+    <div class="field">
+      <label for="filterShift">Ca</label>
+      <select id="filterShift" onchange="renderCalendar(); renderStats();">
+        <option value="all">Tất cả các ca</option>
+        <option value="Ca 1">Ca 1</option>
+        <option value="Ca 2">Ca 2</option>
+        <option value="Ca 3">Ca 3</option>
+        <option value="Ca 4">Ca 4</option>
+      </select>
+    </div>
+
+  </div>
+
+  <div class="lab-summary-row">
+
+    <div class="summary-box">
+      <div class="summary-title">Tổng lượt đăng ký<br>trong tuần</div>
+      <div class="summary-number" id="totalUsed">0</div>
+    </div>
+
+    <div class="progress-box">
+      <div class="progress-item">
+        <div class="progress-info"><span>Lab 1</span><strong id="lab1Usage">0%</strong></div>
+        <div class="progress-bar"><div class="progress-fill" id="lab1Bar" style="width:0%"></div></div>
+      </div>
+
+      <div class="progress-item">
+        <div class="progress-info"><span>Lab 2</span><strong id="lab2Usage">0%</strong></div>
+        <div class="progress-bar"><div class="progress-fill" id="lab2Bar" style="width:0%"></div></div>
+      </div>
+
+      <div class="progress-item">
+        <div class="progress-info"><span>Lab 3</span><strong id="lab3Usage">0%</strong></div>
+        <div class="progress-bar"><div class="progress-fill" id="lab3Bar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- HIDDEN STATS (JS gốc vẫn ghi vào) -->
+  <div style="display:none;">
+    <span id="totalBookings">0</span>
+    <span id="pendingBookings">0</span>
+    <span id="fullSlots">0</span>
+  </div>
+
+  <div class="calendar-legend">
+    <span><i class="legend-box lab1"></i> Lab 1</span>
+    <span><i class="legend-box lab2"></i> Lab 2</span>
+    <span><i class="legend-box lab3"></i> Lab 3</span>
+    <span><i class="legend-box full"></i> Đã đủ nhóm</span>
+  </div>
+
+  <div class="calendar-scroll">
+    <div class="calendar" id="calendarGrid"></div>
+  </div>
+
+</section>
+
+<!-- HỘP THOẠI THÔNG TIN ĐĂNG KÝ (khi nhấn vào thẻ Lab) -->
+<div class="vlu-modal" id="slotModal" hidden onclick="if (event.target === this) closeSlotModal()">
+  <div class="vlu-modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="slotModalTitle">
+    <div class="vlu-modal-head">
+      <div>
+        <h3 id="slotModalTitle">Thông tin đăng ký</h3>
+        <p id="slotModalSub"></p>
+      </div>
+      <button type="button" class="vlu-modal-close" onclick="closeSlotModal()" aria-label="Đóng"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m20.28 4.78-1.06-1.06L12 10.94 4.78 3.72 3.72 4.78 10.94 12l-7.22 7.22 1.06 1.06L12 13.06l7.22 7.22 1.06-1.06L13.06 12l7.22-7.22Z" fill="currentColor"/></svg></button>
+    </div>
+    <div class="vlu-modal-body" id="slotModalBody"></div>
+    <div class="vlu-modal-foot">
+      <button type="button" class="btn btn-dark" onclick="closeSlotModal()">Đóng</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* =========================
+   CẤU HÌNH HỆ THỐNG
+========================= */
+
+const MAX_GROUPS_PER_SHIFT_PER_LAB = 9;
+const SHIFTS_PER_DAY = 4;
+const DAYS_PER_WEEK_VIEW = 6;
+
+const LABS = ["Lab 1", "Lab 2", "Lab 3"];
+
+const SHIFTS = [
+  { name: "Ca 1", time: "07:00 - 09:30" },
+  { name: "Ca 2", time: "09:30 - 12:00" },
+  { name: "Ca 3", time: "13:00 - 15:30" },
+  { name: "Ca 4", time: "15:30 - 18:00" }
+];
+
+const MAX_PER_LAB_PER_WEEK =
+  DAYS_PER_WEEK_VIEW * SHIFTS_PER_DAY * MAX_GROUPS_PER_SHIFT_PER_LAB;
+
+let allBookings = [];
+let currentWeekStart = getMonday(new Date());
+
+/* =========================
+   USER MENU
+========================= */
+
+function toggleUserMenu() {
+  const panel = document.getElementById("userPanel");
+
+  if (panel) {
+    panel.classList.toggle("show");
+  }
+}
+
+/* =========================
+   SAFE TEXT
+========================= */
+
+function escapeHtml(text) {
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/* =========================
+   NOTIFICATION
+========================= */
+
+async function loadSystemNotifications() {
+  const countEl = document.getElementById("notificationCount");
+  const listEl = document.getElementById("notificationList");
+  const statusEl = document.getElementById("notificationStatus");
+
+  if (!countEl || !listEl) return;
+
+  try {
+    const res = await fetch("/api/notifications");
+    const json = await res.json();
+
+    if (!json.success) {
+      countEl.innerText = "0";
+
+      listEl.innerHTML = `
+        <p class="notification-empty">
+          Không thể tải thông báo
+        </p>
+      `;
+
+      if (statusEl) {
+        statusEl.innerText = "Lỗi";
+      }
+
+      return;
+    }
+
+    const data = json.data || [];
+
+    countEl.innerText = json.count || 0;
+
+    if (statusEl) {
+      statusEl.innerText = `${json.count || 0} thông báo`;
+    }
+
+    if (!data.length) {
+      listEl.innerHTML = `
+        <p class="notification-empty">
+          Chưa có thông báo mới
+        </p>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = data.map(item => {
+      const levelClass = getNotificationLevelClass(item.level);
+
+      return `
+        <div class="notification-item ${levelClass}">
+          <b>${escapeHtml(item.title || "Thông báo")}</b>
+          <p>${escapeHtml(item.message || "")}</p>
+          <small>${escapeHtml(item.id_key || "")}</small>
+        </div>
+      `;
+    }).join("");
+
+  } catch (error) {
+    console.error("LOAD NOTIFICATIONS ERROR:", error);
+
+    countEl.innerText = "0";
+
+    listEl.innerHTML = `
+      <p class="notification-empty">
+        Lỗi kết nối thông báo
+      </p>
+    `;
+
+    if (statusEl) {
+      statusEl.innerText = "Lỗi";
+    }
+  }
+}
+
+function toggleNotificationPanel(event) {
+  if (event) {
+    event.stopPropagation();
+  }
+
+  const panel = document.getElementById("notificationPanel");
+
+  if (panel) {
+    panel.classList.toggle("show");
+  }
+}
+
+function getNotificationLevelClass(level) {
+  if (level === "danger") return "notification-danger";
+  if (level === "warning") return "notification-warning";
+  return "notification-info";
+}
+
+document.addEventListener("click", function (event) {
+  const wrapper = document.querySelector(".bell-wrapper");
+  const panel = document.getElementById("notificationPanel");
+  const userPanel = document.getElementById("userPanel");
+  const userArea = document.querySelector(".user-area");
+
+  if (wrapper && panel && !wrapper.contains(event.target)) {
+    panel.classList.remove("show");
+  }
+
+  if (userPanel && userArea && !userArea.contains(event.target)) {
+    userPanel.classList.remove("show");
+  }
+});
+
+/* =========================
+   DATE HELPERS
+========================= */
+
+function getMonday(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+
+  return d;
+}
+
+function formatDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${d}`;
+}
+
+function formatDateVN(date) {
+  const d = String(date.getDate()).padStart(2, "0");
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+
+  return `${d}/${m}`;
+}
+
+function parseDateValue(value) {
+  if (!value) return "";
+
+  const text = String(value).trim();
+
+  let match = text.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+
+  if (match) {
+    const y = Number(match[1]);
+    const m = String(match[2]).padStart(2, "0");
+    const d = String(match[3]).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  match = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+
+  if (match) {
+    const d = String(match[1]).padStart(2, "0");
+    const m = String(match[2]).padStart(2, "0");
+    const y = Number(match[3]);
+    return `${y}-${m}-${d}`;
+  }
+
+  return text;
+}
+
+/* =========================
+   NORMALIZE HELPERS
+========================= */
+
+function removeVietnameseAccent(str) {
+  return String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+}
+
+function normalizeLab(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return "";
+
+  const text = removeVietnameseAccent(raw).toLowerCase();
+
+  if (text.includes("lab 1") || text.includes("lab1")) return "Lab 1";
+  if (text.includes("lab 2") || text.includes("lab2")) return "Lab 2";
+  if (text.includes("lab 3") || text.includes("lab3")) return "Lab 3";
+
+  return raw;
+}
+
+function normalizeShift(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return "";
+
+  const text = removeVietnameseAccent(raw).toLowerCase();
+
+  if (text.includes("ca 1") || text.includes("ca1")) return "Ca 1";
+  if (text.includes("ca 2") || text.includes("ca2")) return "Ca 2";
+  if (text.includes("ca 3") || text.includes("ca3")) return "Ca 3";
+  if (text.includes("ca 4") || text.includes("ca4")) return "Ca 4";
+
+  return raw;
+}
+
+function normalizeStatus(value) {
+  return String(value || "").trim();
+}
+
+function labClass(lab) {
+  if (lab === "Lab 1") return "lab-1";
+  if (lab === "Lab 2") return "lab-2";
+  if (lab === "Lab 3") return "lab-3";
+
+  return "";
+}
+
+/* =========================
+   LOAD BOOKINGS
+========================= */
+
+async function loadBookings() {
+  try {
+    const res = await fetch("/api/bookings");
+    const raw = await res.json();
+
+    console.log("API /api/bookings RAW:", raw);
+
+    if (!Array.isArray(raw)) {
+      console.error("API /api/bookings không trả về array:", raw);
+
+      allBookings = [];
+
+      buildCalendarFrame();
+      renderCalendar();
+      renderStats();
+
+      alert(raw.error || "Không thể tải dữ liệu lịch phòng lab.");
+      return;
+    }
+
+    allBookings = raw.map(item => ({
+      name: String(item.name || "").trim(),
+      lab: normalizeLab(item.lab || ""),
+      shift: normalizeShift(item.shift || ""),
+      date: parseDateValue(item.date || ""),
+      idKey: String(item.idKey || "").trim(),
+      status: normalizeStatus(item.status || ""),
+      student_id: String(item.student_id || "").trim(),
+      register_type: String(item.register_type || "").trim(),
+      member_count: Number(item.member_count) || 1,
+      purpose: String(item.purpose || "").trim(),
+      need_support: Boolean(item.need_support)
+    })).filter(item => {
+      return (
+        item.date &&
+        LABS.includes(item.lab) &&
+        SHIFTS.some(shift => shift.name === item.shift) &&
+        item.status === "ĐÃ_XÁC_NHẬN"
+      );
+    });
+
+    console.log("ALL BOOKINGS NORMALIZED:", allBookings);
+
+    buildCalendarFrame();
+    renderCalendar();
+    renderStats();
+
+  } catch (error) {
+    console.error("LOAD BOOKING ERROR:", error);
+
+    allBookings = [];
+
+    buildCalendarFrame();
+    renderCalendar();
+    renderStats();
+
+    alert("Lỗi tải dữ liệu lịch phòng lab. Vui lòng kiểm tra API /api/bookings.");
+  }
+}
+
+/* =========================
+   BUILD CALENDAR FRAME
+========================= */
+
+function buildCalendarFrame() {
+  const calendar = document.getElementById("calendarGrid");
+  const calendarTitle = document.getElementById("calendarTitle");
+
+  if (!calendar || !calendarTitle) return;
+
+  calendar.innerHTML = "";
+
+  const days = [];
+
+  for (let i = 0; i < DAYS_PER_WEEK_VIEW; i++) {
+    const d = new Date(currentWeekStart);
+    d.setDate(currentWeekStart.getDate() + i);
+    days.push(d);
+  }
+
+  const endWeek = new Date(currentWeekStart);
+  endWeek.setDate(currentWeekStart.getDate() + DAYS_PER_WEEK_VIEW - 1);
+
+  calendarTitle.innerText =
+    `Tuần ${formatDateVN(currentWeekStart)} - ${formatDateVN(endWeek)}/${endWeek.getFullYear()}`;
+
+  calendar.innerHTML += `<div></div>`;
+
+  const dayNames = [
+    "Thứ 2",
+    "Thứ 3",
+    "Thứ 4",
+    "Thứ 5",
+    "Thứ 6",
+    "Thứ 7"
+  ];
+
+  days.forEach((day, index) => {
+    calendar.innerHTML += `
+      <div class="calendar-day-head">
+        ${dayNames[index]}<br>
+        <span>${formatDateVN(day)}</span>
+      </div>
+    `;
+  });
+
+  SHIFTS.forEach(shift => {
+    calendar.innerHTML += `
+      <div class="time">
+        ${shift.name}<br>
+        <span>${shift.time}</span>
+      </div>
+    `;
+
+    days.forEach(day => {
+      calendar.innerHTML += `
+        <div class="calendar-cell"
+             data-date="${formatDateKey(day)}"
+             data-shift="${shift.name}">
+        </div>
+      `;
+    });
+  });
+
+  const scrollBox = document.querySelector(".calendar-scroll");
+  if (scrollBox) {
+    scrollBox.scrollLeft = 0;
+  }
+}
+
+/* =========================
+   RENDER CALENDAR
+========================= */
+
+function renderCalendar() {
+  const filterLab = document.getElementById("filterLab");
+  const filterShift = document.getElementById("filterShift");
+
+  if (!filterLab || !filterShift) return;
+
+  const selectedLab = filterLab.value;
+  const selectedShift = filterShift.value;
+
+  document.querySelectorAll(".calendar-cell").forEach(cell => {
+    const date = cell.dataset.date;
+    const shift = cell.dataset.shift;
+
+    cell.innerHTML = "";
+
+    LABS.forEach(lab => {
+      if (selectedLab !== "all" && selectedLab !== lab) return;
+      if (selectedShift !== "all" && selectedShift !== shift) return;
+
+      const bookings = allBookings.filter(item =>
+        item.date === date &&
+        item.shift === shift &&
+        item.lab === lab
+      );
+
+      if (bookings.length === 0) return;
+
+      const isFull = bookings.length >= MAX_GROUPS_PER_SHIFT_PER_LAB;
+      const fullClass = isFull ? " full-slot" : "";
+
+      cell.innerHTML += `
+        <button class="lab-slot ${labClass(lab)}${fullClass}"
+          type="button"
+          onclick="openLabDetail('${date}', '${shift}', '${lab}')">
+          <b>${lab}</b>
+          <span class="slot-count">${bookings.length}/${MAX_GROUPS_PER_SHIFT_PER_LAB}</span>
+        </button>
+      `;
+    });
+  });
+}
+
+/* =========================
+   OPEN SLOT DETAIL
+========================= */
+
+function openLabDetail(date, shift, lab) {
+  const list = allBookings.filter(item =>
+    item.date === date &&
+    item.shift === shift &&
+    item.lab === lab
+  );
+
+  const shiftInfo = SHIFTS.find(item => item.name === shift);
+  const [y, m, d] = String(date).split("-").map(Number);
+  const dayObj = new Date(y, m - 1, d);
+  const weekdays = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+  const dateText = `${weekdays[dayObj.getDay()]}, ${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+
+  const used = list.length;
+  const remaining = Math.max(MAX_GROUPS_PER_SHIFT_PER_LAB - used, 0);
+  const percent = Math.min(Math.round((used / MAX_GROUPS_PER_SHIFT_PER_LAB) * 100), 100);
+  const totalStudents = list.reduce((sum, item) => sum + (Number(item.member_count) || 1), 0);
+  const supportCount = list.filter(item => item.need_support).length;
+
+  document.getElementById("slotModalTitle").textContent = `Thông tin đăng ký ${lab} – ${shift}`;
+  document.getElementById("slotModalSub").textContent =
+    `${dateText}${shiftInfo ? " · " + shiftInfo.time : ""}`;
+
+  const summary = `
+    <p class="slot-intro">Hệ thống hiển thị thông tin đăng ký của khung giờ này như sau:</p>
+
+    <div class="slot-summary">
+      <div><span>Phòng Lab</span><b>${escapeHtml(lab)}</b></div>
+      <div><span>Ca sử dụng</span><b>${escapeHtml(shift)}${shiftInfo ? ` <small>(${shiftInfo.time})</small>` : ""}</b></div>
+      <div><span>Ngày sử dụng</span><b>${dateText}</b></div>
+      <div class="slot-capacity">
+        <span>Số nhóm đã đăng ký</span>
+        <b>${used}/${MAX_GROUPS_PER_SHIFT_PER_LAB} nhóm</b>
+        <div class="slot-meter ${used >= MAX_GROUPS_PER_SHIFT_PER_LAB ? "full" : ""}"><i style="width:${percent}%"></i></div>
+        <small>${remaining ? `Còn trống ${remaining} nhóm` : "Đã đủ số nhóm"} · ${totalStudents} sinh viên${supportCount ? ` · ${supportCount} yêu cầu hỗ trợ KT` : ""}</small>
+      </div>
+    </div>
+  `;
+
+  const table = used ? `
+    <div class="table-wrap">
+      <table class="slot-table">
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Người đăng ký</th>
+            <th>MSSV</th>
+            <th>Hình thức</th>
+            <th>Số SV</th>
+            <th>Mục đích sử dụng</th>
+            <th>Hỗ trợ KT</th>
+            <th>Mã đăng ký</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map((item, index) => `
+            <tr>
+              <td>${index + 1}</td>
+              <td><b>${escapeHtml(item.name || "Chưa có tên")}</b></td>
+              <td>${escapeHtml(item.student_id || "—")}</td>
+              <td>${escapeHtml(item.register_type || "—")}</td>
+              <td>${Number(item.member_count) || 1}</td>
+              <td>${escapeHtml(item.purpose || "—")}</td>
+              <td>${item.need_support
+                ? `<span class="pill pill-amber">Có</span>`
+                : `<span class="pill pill-gray">Không</span>`}</td>
+              <td class="slot-id">${escapeHtml(item.idKey || "Chưa có mã")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  ` : `<div class="slot-empty">Chưa có nhóm nào đăng ký trong khung giờ này.</div>`;
+
+  document.getElementById("slotModalBody").innerHTML = summary + table;
+
+  const modal = document.getElementById("slotModal");
+  modal.hidden = false;
+  document.body.classList.add("modal-open");
+  modal.querySelector(".vlu-modal-close").focus();
+}
+
+function closeSlotModal() {
+  const modal = document.getElementById("slotModal");
+  if (!modal) return;
+  modal.hidden = true;
+  document.body.classList.remove("modal-open");
+}
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeSlotModal();
+});
+
+/* =========================
+   RENDER STATS
+========================= */
+
+function renderStats() {
+  const filterLab = document.getElementById("filterLab");
+  const filterShift = document.getElementById("filterShift");
+
+  const selectedLab = filterLab ? filterLab.value : "all";
+  const selectedShift = filterShift ? filterShift.value : "all";
+
+  const weekDates = [];
+
+  for (let i = 0; i < DAYS_PER_WEEK_VIEW; i++) {
+    const d = new Date(currentWeekStart);
+    d.setDate(currentWeekStart.getDate() + i);
+    weekDates.push(formatDateKey(d));
+  }
+
+  const weekBookings = allBookings.filter(item => {
+    const matchWeek = weekDates.includes(item.date);
+    const matchLab = selectedLab === "all" || item.lab === selectedLab;
+    const matchShift = selectedShift === "all" || item.shift === selectedShift;
+
+    return matchWeek && matchLab && matchShift;
+  });
+
+  const totalBookingsEl = document.getElementById("totalBookings");
+  const totalUsedEl = document.getElementById("totalUsed");
+  const pendingBookingsEl = document.getElementById("pendingBookings");
+  const fullSlotsEl = document.getElementById("fullSlots");
+
+  if (totalBookingsEl) totalBookingsEl.innerText = weekBookings.length;
+  if (totalUsedEl) totalUsedEl.innerText = weekBookings.length;
+  if (pendingBookingsEl) pendingBookingsEl.innerText = 0;
+
+  let fullSlotCount = 0;
+
+  weekDates.forEach(date => {
+    SHIFTS.forEach(shift => {
+      LABS.forEach(lab => {
+        const used = allBookings.filter(item =>
+          item.date === date &&
+          item.shift === shift.name &&
+          item.lab === lab
+        ).length;
+
+        if (used >= MAX_GROUPS_PER_SHIFT_PER_LAB) {
+          fullSlotCount++;
+        }
+      });
+    });
+  });
+
+  if (fullSlotsEl) fullSlotsEl.innerText = fullSlotCount;
+
+  LABS.forEach((lab, index) => {
+    const labWeekBookings = allBookings.filter(item =>
+      weekDates.includes(item.date) &&
+      item.lab === lab
+    );
+
+    const percent = Math.min(
+      Math.round((labWeekBookings.length / MAX_PER_LAB_PER_WEEK) * 100),
+      100
+    );
+
+    const usageEl = document.getElementById(`lab${index + 1}Usage`);
+    const barEl = document.getElementById(`lab${index + 1}Bar`);
+
+    if (usageEl) usageEl.innerText = percent + "%";
+    if (barEl) barEl.style.width = percent + "%";
+  });
+}
+
+/* =========================
+   WEEK CONTROL
+========================= */
+
+function changeWeek(step) {
+  currentWeekStart.setDate(currentWeekStart.getDate() + step * 7);
+
+  buildCalendarFrame();
+  renderCalendar();
+  renderStats();
+}
+
+function goToday() {
+  currentWeekStart = getMonday(new Date());
+
+  buildCalendarFrame();
+  renderCalendar();
+  renderStats();
+}
+
+/* =========================
+   INIT
+========================= */
+
+document.addEventListener("DOMContentLoaded", function () {
+  loadBookings();
+  loadSystemNotifications();
+
+  setInterval(loadSystemNotifications, 60000);
+});
+</script>
+{% endblock %}

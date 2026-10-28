@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#d72134">
+  <title>Đăng nhập | Hệ thống quản lý phòng Lab - VLU</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+
+<body>
+
+<main class="login-page">
+
+  <!-- GIỚI THIỆU (trên nền ảnh campus) -->
+  <section class="login-intro">
+
+    <img src="{{ url_for('static', filename='images/logo-vlu-white.png') }}" alt="Van Lang University" class="intro-logo">
+
+    <div class="intro-text">
+      <span class="intro-kicker">Khoa Kỹ thuật và Quản lý Công nghiệp</span>
+
+      <h1>Hệ thống quản lý<br>phòng Lab</h1>
+
+      <p>
+        Lịch phòng, điểm danh, bàn giao vệ sinh, hiệu suất sử dụng
+        và theo dõi sinh viên theo lớp học phần.
+      </p>
+    </div>
+
+    <small class="intro-foot">© Van Lang University</small>
+
+  </section>
+
+  <!-- KHỐI ĐĂNG NHẬP -->
+  <section class="login-card" aria-labelledby="loginTitle">
+
+    <img src="{{ url_for('static', filename='images/logo-vlu.png.png') }}" alt="Van Lang University" class="card-logo">
+
+    <h2 id="loginTitle">Đăng nhập</h2>
+    <p class="login-desc">Dành cho kỹ thuật viên và giảng viên của Khoa.</p>
+
+    <form method="POST">
+
+      <label class="field" for="email">
+        <span>Email</span>
+        <div class="input-box">
+          <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.25 4H4.75A2.755 2.755 0 0 0 2 6.75v10.5A2.755 2.755 0 0 0 4.75 20h14.5A2.755 2.755 0 0 0 22 17.25V6.75A2.755 2.755 0 0 0 19.25 4ZM4.75 5.5h14.5c.69 0 1.25.56 1.25 1.25v.975l-8.5 4.91-8.5-4.91V6.75c0-.69.56-1.25 1.25-1.25Zm14.5 13H4.75c-.69 0-1.25-.56-1.25-1.25V9.46l8.5 4.91 8.5-4.91v7.79c0 .69-.56 1.25-1.25 1.25Z" fill="currentColor"/></svg>
+          <input type="email" id="email" name="email" placeholder="ten@vlu.edu.vn" autocomplete="username" required>
+        </div>
+      </label>
+
+      <label class="field" for="password">
+        <span>Mật khẩu</span>
+        <div class="input-box">
+          <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 10.605V8c0-3.31-2.69-6-6-6S6 4.69 6 8v2.605c-1.15.33-2 1.385-2 2.645v6A2.755 2.755 0 0 0 6.75 22h10.5A2.755 2.755 0 0 0 20 19.25v-6c0-1.255-.85-2.315-2-2.645ZM12 3.5c2.48 0 4.5 2.02 4.5 4.5v2.5h-9V8c0-2.48 2.02-4.5 4.5-4.5Zm6.5 15.75c0 .69-.56 1.25-1.25 1.25H6.75c-.69 0-1.25-.56-1.25-1.25v-6c0-.69.56-1.25 1.25-1.25h10.5c.69 0 1.25.56 1.25 1.25v6Z" fill="currentColor"/></svg>
+          <input type="password" id="password" name="password" placeholder="Nhập mật khẩu" autocomplete="current-password" required>
+        </div>
+      </label>
+
+      {% if error %}
+        <div class="error-message">{{ error }}</div>
+      {% endif %}
+
+      <button type="submit" class="btn-login">
+        Đăng nhập <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.675 11.115 14.53 4.97l-1.06 1.06 5.22 5.22H3v1.5h15.69l-5.22 5.22 1.06 1.06 6.145-6.145a1.258 1.258 0 0 0 0-1.77Z" fill="currentColor"/></svg>
+      </button>
+
+    </form>
+
+    <p class="login-note">
+      <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 22C6.485 22 2 17.515 2 12S6.485 2 12 2s10 4.485 10 10-4.485 10-10 10Zm0-18.5c-4.685 0-8.5 3.815-8.5 8.5 0 4.685 3.815 8.5 8.5 8.5 4.685 0 8.5-3.815 8.5-8.5 0-4.685-3.815-8.5-8.5-8.5Zm.75 12.5v-5.5h-1.5V16h1.5ZM13 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" fill="currentColor"/></svg>
+      Nên tắt chức năng dịch tự động của trình duyệt khi sử dụng hệ thống.
+    </p>
+
+  </section>
+
+</main>
+
+</body>
+</html>

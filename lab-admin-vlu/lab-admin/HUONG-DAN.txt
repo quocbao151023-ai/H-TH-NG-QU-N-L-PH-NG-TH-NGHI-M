@@ -1,0 +1,104 @@
+HỆ THỐNG QUẢN LÝ PHÒNG LAB - GIAO DIỆN VLU
+
+CÁCH CHẠY (PowerShell, trong thư mục lab-admin có app.py)
+  py -m pip install -r requirements.txt     (lần đầu; có openpyxl để đọc/xuất Excel)
+  py app.py
+  Mở http://127.0.0.1:5000/  ->  Ctrl + F5
+
+TÀI KHOẢN
+  Kỹ thuật viên: giữ nguyên như cũ (TECH_EMAIL / TECH_PASSWORD trong app.py).
+      -> Đăng nhập vào TRANG CHỦ (/home).
+  Giảng viên: sửa danh sách LECTURER_ACCOUNTS trong app.py, ví dụ:
+      "nguyenvana@vlu.edu.vn": {"password": "matkhau", "name": "Nguyễn Văn A"},
+  (Tài khoản mẫu: giangvien@vlu.edu.vn / giangvien123 – hãy đổi hoặc xóa.)
+
+TRANG CHỦ KỸ THUẬT VIÊN (/home)
+  - Thông báo cần kiểm tra: bấm "Đã kiểm tra" -> lưu vào sheet NOTIFICATION_CHECKED.
+  - Yêu cầu hỗ trợ kỹ thuật (từ câu hỏi "cần hỗ trợ kỹ thuật" trên form):
+    theo ngày / Lab / ca; bấm "Đã hỗ trợ" để đánh dấu.
+  - Lịch làm việc kỹ thuật viên - trợ giảng: kỹ thuật viên tự thêm lịch
+    (có thể lặp lại hằng tuần), lưu vào sheet LAB_STAFF_SCHEDULE; bảng tổng giờ trong tuần.
+  Các sheet trên tự tạo trong file Google Sheet Booking khi dùng lần đầu.
+  - Vai trò người trực: Kỹ thuật viên / Trợ giảng / Giảng viên. Nhập email để người trực
+    nhận email phân công; hủy ca thì nhận email báo hủy. Ca hủy được đánh dấu "ĐÃ HỦY"
+    (không xóa dòng) để giữ lịch sử.
+  - Khi điểm danh, cột "Người điểm danh" (sheet LAB_ATTENDANCE) ghi tên người trực ca đó
+    theo lịch (ưu tiên đúng phòng Lab, sau đó "Tất cả phòng Lab"); không có lịch -> Quốc Bảo.
+
+GỬI EMAIL LỊCH TRỰC (giống cách hệ thống Booking của sinh viên)
+  app.py chỉ ghi EMAIL_STATUS = "CHƯA GỬI" vào sheet LAB_STAFF_SCHEDULE.
+  Google Apps Script gửi email bằng tài khoản Google của bạn rồi ghi "ĐÃ GỬI" / "LỖI".
+  Cài 1 lần:
+    1. Mở file Google Sheet Booking -> Tiện ích mở rộng -> Apps Script.
+    2. Dán apps-script/apps-script-sheet.gs (gồm email lịch trực + email đăng ký) – xem mục APPS SCRIPT.
+    3. Chạy hàm caiDatTuDong (cấp quyền khi được hỏi) -> script tự chạy mỗi 1 phút.
+  Không cần mật khẩu email trong app.py.
+
+GIỚI HẠN ĐỌC GOOGLE SHEET
+  Google cho tối đa 60 lượt đọc/phút. Hệ thống giữ dữ liệu đọc trong 30 giây
+  (SHEET_CACHE_SECONDS trong app.py); ghi dữ liệu xong sẽ cập nhật ngay.
+
+LỊCH PHÒNG LAB
+  Sức chứa: 9 nhóm / Lab / ca (hằng số MAX_GROUPS_PER_SHIFT_PER_LAB).
+  Nhấn vào thẻ Lab -> hộp thoại bảng thông tin đăng ký.
+
+THEO DÕI THEO LỚP (/teacher)
+  1. Tải file Excel/CSV danh sách lớp (cột Mã lớp, Nhóm, Đề tài, MSSV, Họ tên). Có file mẫu.
+  2. Danh sách lưu vào sheet LECTURER_ROSTER.
+  3. Xuất Excel: sheet Tổng hợp / Điểm danh (x - v theo ngày) / Bàn giao / Chi tiết lượt.
+
+CÁC FILE
+  app.py      : giữ nguyên cách đọc Google Sheet; các hàm build_attendance_records,
+                build_cleaning_records, build_notifications được tách NGUYÊN VĂN từ API gốc
+                để dùng chung. Thêm API giảng viên, trang chủ, lịch làm việc.
+  templates/  : base.html (khung chung) + 7 trang
+  static/     : theme.css, pages.css, login.css
+
+CẬP NHẬT – QUY ĐỊNH BÀN GIAO
+- Trang Theo dõi ra vào: sinh viên có lượt đã qua mà chưa bàn giao được tô đỏ, ghi chú dưới tên
+  ("Lượt này chưa bàn giao", "Tháng mm/yyyy: n lượt chưa bàn giao") để kỹ thuật viên xem xét
+  điểm danh. File Excel xuất từ trang này có thêm cột "Ghi chú bàn giao".
+- File Excel theo lớp (giảng viên), sheet Điểm danh: thêm cột "Lượt chưa bàn giao" (tô đỏ khi > 0).
+
+CẬP NHẬT – TRANG THEO DÕI RA VÀO
+- Bảng vừa khung, không còn thanh kéo ngang (ghi chú tự xuống dòng).
+- Lượt đăng ký nhóm hiện 1 dòng người đại diện; bấm "n thành viên" để sổ danh sách, có nút
+  "Đánh dấu cả nhóm có mặt". Khi tìm kiếm / lọc trạng thái, nhóm có thành viên phù hợp tự mở ra.
+- Ngày sử dụng sai năm (vd 07/08/0002, 21/02/2005) hiện ghi chú màu cam "Ngày sử dụng không hợp lệ"
+  và KHÔNG bị tính vào số lần chưa bàn giao.
+- ID_KEY dạng mới (L1C124032026-01) và dạng cũ (L1-C1-24032026-01) đều đọc được.
+- Đăng ký nhiều ca trên cổng: 1 mã ghi đủ các ca, vd L1C2C3C429102026-02 (Ca 2 + Ca 3 + Ca 4).
+  Mã hiện ở từng ca trên Lịch; Điểm danh tách theo từng ca; thông báo và yêu cầu hỗ trợ gộp 1 dòng "Ca 2, Ca 3, Ca 4".
+
+CẬP NHẬT – CỔNG SINH VIÊN DÙNG CHUNG FILE GOOGLE SHEET CỦA KỸ THUẬT VIÊN
+- Cổng sinh viên ghi vào file Booking của kỹ thuật viên (BOOKING_SPREADSHEET_ID), ở 3 sheet riêng,
+  tự tạo ở lần dùng đầu tiên:
+    WEB_BOOKING  : mỗi ca đăng ký 1 dòng (có cột MA_DANG_KY_CHUNG, HINH_THUC_BAN_GIAO)
+    WEB_MEMBERS  : từng thành viên của lượt đăng ký
+    WEB_HANDOVER : phiếu bàn giao trên web
+  Sheet LAB_BOOKING / LAB_HANDOVER của Google Form giữ nguyên.
+- Hệ thống quản lý đọc cả Google Form lẫn 3 sheet WEB_... và chuyển về cùng tên cột, nên mọi trang
+  (Lịch, Theo dõi ra vào, Vệ sinh & bàn giao, Hiệu suất, Trang chủ, Giảng viên) hiện đủ. Không cần cấu hình thêm.
+- Nhóm "từng thành viên tự bàn giao": ai chưa gửi phiếu thì người đó có ghi chú đỏ.
+  Đăng ký nhiều ca cùng lúc: 1 phiếu bàn giao được tính cho tất cả các ca của lần đăng ký đó.
+- APPS SCRIPT: chỉ dùng 1 file apps-script/apps-script-sheet.gs (xem mục APPS SCRIPT bên dưới).
+
+CẬP NHẬT – MSSV ĐÚNG 13 CHỮ SỐ
+- Tải danh sách lớp: nếu có MSSV không đủ / thừa số, hệ thống báo đúng dòng bị sai và không nhận file
+  cho tới khi sửa xong.
+
+
+APPS SCRIPT (file Google Sheet phòng Lab) – KHÔNG CÒN DÙNG GOOGLE FORM
+- Script chỉ GỬI EMAIL, hàm guiEmail chạy mỗi 1 phút:
+    Email đăng ký    : sheet WEB_BOOKING
+        + lượt bị hủy do đăng ký trùng lịch  -> email "hệ thống đã hủy lượt đăng ký trước"
+        + lượt mới còn chỗ (≤ 9 nhóm / ca)   -> email XÁC NHẬN (mẫu cũ, kèm file lịch .ics)
+        + lượt mới vượt 9 nhóm               -> chuyển "TỪ CHỐI - ĐỦ CHỖ", email nhắc đăng ký lại
+    Email lịch trực  : sheet LAB_STAFF_SCHEDULE (phân công / hủy ca trực; chỉ gửi khi có nhập Email)
+  Gửi xong ghi EMAIL_STATUS = ĐÃ GỬI (lỗi thì LỖI + lý do ở EMAIL_ERROR).
+  Gửi ngay / kiểm tra: chọn hàm guiEmail -> Chạy -> Nhật ký thực thi ghi số đã gửi và lỗi (nếu có).
+- Cài (tài khoản kỹ thuật viên): Tiện ích mở rộng -> Apps Script -> XÓA hết code / tệp cũ,
+  dán apps-script/apps-script-sheet.gs, Lưu -> chạy hàm caiDatTuDong -> cấp quyền.
+  (caiDatTuDong xóa các trình kích hoạt cũ, kể cả onFormSubmit của Google Form.)
+- Giờ ca trong email: CAU_HINH.GIO_CA (Ca 4: 15:30 – 18:00 như cổng sinh viên).
+- Sheet LAB_BOOKING / LAB_HANDOVER của form cũ giữ làm dữ liệu lịch sử, hệ thống quản lý vẫn hiển thị.

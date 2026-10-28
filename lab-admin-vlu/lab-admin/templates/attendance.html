@@ -1,0 +1,1064 @@
+{% extends "base.html" %}
+{% set active_page = "attendance" %}
+{% set page_title = "Theo dõi ra vào phòng Lab" %}
+{% set page_desc = "Điểm danh sinh viên theo từng lượt đăng ký. Trạng thái bạn cập nhật ở đây cũng được dùng cho trang Theo dõi theo lớp của giảng viên." %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='pages.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- THỐNG KÊ -->
+<section class="stat-grid">
+
+  <div class="stat-card tone-dark">
+    <div class="stat-top">
+      <p class="stat-label">Tổng đăng ký</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.5 13c-2.755 0-5-2.245-5-5s2.245-5 5-5 5 2.245 5 5-2.245 5-5 5Zm0-8.5C7.57 4.5 6 6.07 6 8s1.57 3.5 3.5 3.5S13 9.93 13 8s-1.57-3.5-3.5-3.5Zm5.5 7V13c2.756 0 5-2.245 5-5s-2.244-5-5-5v1.5c1.93 0 3.5 1.57 3.5 3.5s-1.57 3.5-3.5 3.5Zm5.815 9.694v.001h-.005l.005-.001Zm0 0-.945-3.524A2.258 2.258 0 0 0 17.695 16v-1.5a3.751 3.751 0 0 1 3.62 2.78l.945 3.525-1.445.389Zm-5-.002v.003h-.01l.01-.003Zm-.944-3.522.944 3.522 1.44-.387-.944-3.525a3.751 3.751 0 0 0-3.62-2.78H6.295a3.76 3.76 0 0 0-3.62 2.78l-.945 3.525 1.45.39.945-3.525A2.257 2.257 0 0 1 6.3 16h6.395c1.02 0 1.91.69 2.175 1.67Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statTotal">0 <span>sinh viên</span></h3>
+    <div class="stat-foot">Sinh viên theo bộ lọc hiện tại</div>
+  </div>
+
+  <div class="stat-card tone-green">
+    <div class="stat-top">
+      <p class="stat-label">Có mặt</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M2 12c0 5.515 4.485 10 10 10s10-4.485 10-10S17.515 2 12 2 2 6.485 2 12Zm1.5 0c0-4.685 3.815-8.5 8.5-8.5 4.685 0 8.5 3.815 8.5 8.5 0 4.685-3.815 8.5-8.5 8.5-4.685 0-8.5-3.815-8.5-8.5Zm6.115 3.175c.245.245.565.365.885.365.32 0 .64-.12.885-.365L17.28 9.28l-1.06-1.06-5.72 5.72-2.22-2.22-1.06 1.06 2.395 2.395Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statPresent">0 <span>sinh viên</span></h3>
+    <div class="stat-foot" data-share-of="statTotal" data-share-text="tổng đăng ký">&nbsp;</div>
+  </div>
+
+  <div class="stat-card tone-amber">
+    <div class="stat-top">
+      <p class="stat-label">Chưa điểm danh</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M2 12c0 5.515 4.485 10 10 10s10-4.485 10-10S17.515 2 12 2 2 6.485 2 12Zm1.5 0c0-4.685 3.815-8.5 8.5-8.5 4.685 0 8.5 3.815 8.5 8.5 0 4.685-3.815 8.5-8.5 8.5-4.685 0-8.5-3.815-8.5-8.5Zm7.75.31 3.47 3.47 1.06-1.06-3.03-3.03V6.495h-1.5v5.815Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statPending">0 <span>sinh viên</span></h3>
+    <div class="stat-foot" data-share-of="statTotal" data-share-text="tổng đăng ký">&nbsp;</div>
+  </div>
+
+  <div class="stat-card tone-red">
+    <div class="stat-top">
+      <p class="stat-label">Vắng</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M2 12C2 6.485 6.485 2 12 2s10 4.485 10 10-4.485 10-10 10S2 17.515 2 12Zm1.5 0c0 4.685 3.815 8.5 8.5 8.5 4.685 0 8.5-3.815 8.5-8.5 0-4.685-3.815-8.5-8.5-8.5-4.685 0-8.5 3.815-8.5 8.5Zm8.5-1.06 3.22-3.22 1.06 1.06L13.06 12l3.22 3.22-1.06 1.06L12 13.06l-3.22 3.22-1.06-1.06L10.94 12 7.72 8.78l1.06-1.06L12 10.94Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statAbsent">0 <span>sinh viên</span></h3>
+    <div class="stat-foot" data-share-of="statTotal" data-share-text="tổng đăng ký">&nbsp;</div>
+  </div>
+
+</section>
+
+<!-- BỘ LỌC -->
+<section class="card filter-bar attendance-filter">
+
+  <div class="field search-field">
+    <label for="attendanceSearch">Tìm kiếm</label>
+    <div class="search-box">
+      <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m21.78 20.72-5.62-5.62A7.96 7.96 0 0 0 18 10c0-4.41-3.59-8-8-8s-8 3.59-8 8 3.59 8 8 8a7.96 7.96 0 0 0 5.1-1.84l5.62 5.62 1.06-1.06ZM10 16.5A6.506 6.506 0 0 1 3.5 10c0-3.585 2.915-6.5 6.5-6.5s6.5 2.915 6.5 6.5-2.915 6.5-6.5 6.5Z" fill="currentColor"/></svg>
+      <input type="search" id="attendanceSearch" placeholder="MSSV, họ tên hoặc mã đăng ký" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="filterDate">Ngày sử dụng</label>
+    <input type="date" id="filterDate">
+  </div>
+
+  <div class="field">
+    <label for="filterLab">Phòng Lab</label>
+    <select id="filterLab">
+      <option value="">Tất cả Lab</option>
+      <option value="Lab 1">Lab 1</option>
+      <option value="Lab 2">Lab 2</option>
+      <option value="Lab 3">Lab 3</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="filterShift">Ca</label>
+    <select id="filterShift">
+      <option value="">Tất cả ca</option>
+      <option value="Ca 1">Ca 1</option>
+      <option value="Ca 2">Ca 2</option>
+      <option value="Ca 3">Ca 3</option>
+      <option value="Ca 4">Ca 4</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="filterStatus">Trạng thái</label>
+    <select id="filterStatus">
+      <option value="">Tất cả trạng thái</option>
+      <option value="Chưa điểm danh">Chưa điểm danh</option>
+      <option value="Có mặt">Có mặt</option>
+      <option value="Vắng">Vắng</option>
+    </select>
+  </div>
+
+  <button class="attendance-export-btn" type="button" onclick="exportAttendanceExcel()">
+    <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.885 16.675a1.245 1.245 0 0 1-.885.365c-.32 0-.64-.12-.885-.365L6.47 12.03l1.06-1.06 3.72 3.72V3h1.5v11.69l3.72-3.72 1.06 1.06-4.645 4.645ZM19.5 18.25V15.5H21v2.75A2.755 2.755 0 0 1 18.25 21H5.75A2.755 2.755 0 0 1 3 18.25V15.5h1.5v2.75c0 .69.56 1.25 1.25 1.25h12.5c.69 0 1.25-.56 1.25-1.25Z" fill="currentColor"/></svg> Xuất Excel
+  </button>
+
+</section>
+
+<!-- BẢNG -->
+<section class="card card-pad attendance-list-card">
+
+  <div class="attendance-list-head">
+    <div class="attendance-list-title">
+      <h3>Danh sách theo dõi ra / vào</h3>
+      <button type="button" class="btn btn-outline btn-sm" id="toggleAllGroups" onclick="toggleAllAttendanceGroups()" hidden>Mở tất cả nhóm</button>
+    </div>
+    <p class="handover-flag-legend" id="handoverFlagLegend" hidden>
+      <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M2.86 21c-.45 0-.855-.235-1.08-.625a1.23 1.23 0 0 1 0-1.25L10.915 3.14a1.25 1.25 0 0 1 2.17 0l9.14 15.99c.225.39.22.86 0 1.25-.225.39-.63.625-1.08.625L21.14 21H2.86Zm.435-1.5H20.71L12 4.26 3.29 19.5h.005Zm9.455-5V9h-1.5v5.5h1.5ZM13 17a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" fill="currentColor"/></svg>
+      <span><b>0</b> sinh viên có lượt chưa bàn giao – ghi chú đỏ dưới tên để xem xét điểm danh (đủ 3 lượt/tháng: cổng sinh viên tự khóa đăng ký đến hết tháng).</span>
+    </p>
+  </div>
+
+  <div class="table-wrap">
+    <table class="attendance-main-table">
+      <colgroup>
+        <col style="width:14%"><col style="width:30%"><col style="width:14%"><col style="width:7%">
+        <col style="width:10%"><col style="width:6%"><col style="width:10%"><col style="width:174px">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Mã sinh viên</th>
+          <th>Họ tên</th>
+          <th>Mã đăng ký</th>
+          <th>Lab</th>
+          <th>Ngày</th>
+          <th>Ca</th>
+          <th>Loại</th>
+          <th>Trạng thái điểm danh</th>
+        </tr>
+      </thead>
+
+      <tbody id="attendanceTableBody">
+        <tr>
+          <td colspan="8" class="attendance-empty">Đang tải dữ liệu...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* =========================
+   USER MENU
+========================= */
+
+function toggleUserMenu() {
+  const panel = document.getElementById("userPanel");
+
+  if (panel) {
+    panel.classList.toggle("show");
+  }
+}
+
+document.addEventListener("click", function (event) {
+  const userArea = document.querySelector(".user-area");
+  const userPanel = document.getElementById("userPanel");
+
+  if (!userArea || !userPanel) return;
+
+  if (!userArea.contains(event.target)) {
+    userPanel.classList.remove("show");
+  }
+});
+
+/* =========================
+   GLOBAL DATA
+========================= */
+
+let attendanceData = [];
+let filteredAttendanceData = [];
+
+/* =========================
+   LOAD DATA
+========================= */
+
+async function loadAttendanceBookings() {
+  const tbody = document.getElementById("attendanceTableBody");
+
+  try {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="attendance-empty">
+          Đang tải dữ liệu...
+        </td>
+      </tr>
+    `;
+
+    const res = await fetch("/api/attendance-bookings");
+    const json = await res.json();
+
+    console.log("ATTENDANCE API RAW:", json);
+
+    if (!json.success) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="attendance-empty">
+            Không thể tải dữ liệu điểm danh: ${escapeHtml(json.error || "")}
+          </td>
+        </tr>
+      `;
+
+      attendanceData = [];
+      filteredAttendanceData = [];
+      renderAttendanceSummary();
+      return;
+    }
+
+    attendanceData = normalizeAttendanceData(json.data || []);
+
+    attendanceData.sort((a, b) => {
+      const dateA = parseAttendanceDateTime(a.date_input, a.shift);
+      const dateB = parseAttendanceDateTime(b.date_input, b.shift);
+
+      return dateA - dateB;
+    });
+
+    filteredAttendanceData = [...attendanceData];
+
+    setDefaultDate();
+    applyAttendanceFilter();
+
+  } catch (error) {
+    console.error("LOAD ATTENDANCE ERROR:", error);
+
+    attendanceData = [];
+    filteredAttendanceData = [];
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="attendance-empty">
+          Lỗi tải dữ liệu điểm danh. Vui lòng kiểm tra API /api/attendance-bookings.
+        </td>
+      </tr>
+    `;
+
+    renderAttendanceSummary();
+  }
+}
+
+/* =========================
+   NORMALIZE DATA
+========================= */
+
+function normalizeAttendanceData(data) {
+  return data.map((item, index) => {
+    return {
+      row_id: index,
+      booking_id: String(item.booking_id || "").trim(),
+      register_type: String(item.register_type || "").trim(),
+      name: String(item.name || "").trim(),
+      student_id: String(item.student_id || "").trim(),
+      lab: normalizeLab(item.lab || ""),
+      date: String(item.date || "").trim(),
+      date_input: convertAnyDateToInputDate(item.date || ""),
+      shift: normalizeShift(item.shift || ""),
+      role: String(item.role || "").trim(),
+      raw_members: String(item.raw_members || "").trim(),
+      attendance_status: normalizeAttendanceStatusValue(item.attendance_status || "Chưa điểm danh"),
+      handover_missed: Boolean(item.handover_missed),
+      missed_in_month: Number(item.missed_in_month) || 0,
+      missed_month: String(item.missed_month || "").trim(),
+      missed_limit: Number(item.missed_limit) || 3,
+      date_invalid: Boolean(item.date_invalid),
+      handover_mode: String(item.handover_mode || "").trim()
+    };
+  }).filter(item => item.name || item.student_id || item.booking_id);
+}
+
+function removeVietnameseAccent(str) {
+  return String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+}
+
+function normalizeLab(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return "";
+
+  const text = removeVietnameseAccent(raw).toLowerCase();
+
+  if (text.includes("lab 1") || text.includes("lab1")) return "Lab 1";
+  if (text.includes("lab 2") || text.includes("lab2")) return "Lab 2";
+  if (text.includes("lab 3") || text.includes("lab3")) return "Lab 3";
+
+  return raw;
+}
+
+function normalizeShift(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return "";
+
+  const text = removeVietnameseAccent(raw).toLowerCase();
+
+  if (text.includes("ca 1") || text.includes("ca1")) return "Ca 1";
+  if (text.includes("ca 2") || text.includes("ca2")) return "Ca 2";
+  if (text.includes("ca 3") || text.includes("ca3")) return "Ca 3";
+  if (text.includes("ca 4") || text.includes("ca4")) return "Ca 4";
+
+  return raw;
+}
+
+function normalizeAttendanceStatusValue(status) {
+  const raw = String(status || "").trim();
+
+  if (!raw) return "Chưa điểm danh";
+
+  const text = removeVietnameseAccent(raw).toLowerCase();
+
+  if (text.includes("co mat") || text.includes("present")) {
+    return "Có mặt";
+  }
+
+  if (text.includes("vang") || text.includes("absent")) {
+    return "Vắng";
+  }
+
+  return "Chưa điểm danh";
+}
+
+/* =========================
+   DEFAULT DATE
+========================= */
+
+function setDefaultDate() {
+  const dateInput = document.getElementById("filterDate");
+
+  if (!dateInput) return;
+
+  if (dateInput.value) return;
+
+  const today = new Date();
+
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  dateInput.value = `${year}-${month}-${day}`;
+}
+
+/* =========================
+   FILTER
+========================= */
+function applyAttendanceFilter() {
+  const dateInput = document.getElementById("filterDate");
+  const labInput = document.getElementById("filterLab");
+  const shiftInput = document.getElementById("filterShift");
+  const statusInput = document.getElementById("filterStatus");
+
+  const selectedDate = dateInput ? dateInput.value : "";
+  const selectedLab = labInput ? labInput.value : "";
+  const selectedShift = shiftInput ? shiftInput.value : "";
+  const selectedStatus = statusInput ? statusInput.value : "";
+
+  // Tìm kiếm: bỏ dấu, không phân biệt hoa thường
+  const searchInput = document.getElementById("attendanceSearch");
+  const keyword = normalizeSearchKeyword(searchInput ? searchInput.value : "");
+
+  filteredAttendanceData = attendanceData.filter(item => {
+    const matchDate = !selectedDate || item.date_input === selectedDate;
+    const matchLab = !selectedLab || item.lab === selectedLab;
+    const matchShift = !selectedShift || item.shift === selectedShift;
+    const matchStatus = !selectedStatus || item.attendance_status === selectedStatus;
+
+    const matchSearch = !keyword || normalizeSearchKeyword([
+      item.student_id,
+      item.name,
+      item.booking_id
+    ].join(" ")).includes(keyword);
+
+    return matchDate && matchLab && matchShift && matchStatus && matchSearch;
+  });
+
+  renderAttendanceTable();
+  renderAttendanceSummary();
+}
+
+/* =========================
+   TABLE
+========================= */
+
+/* =========================
+   GHI CHÚ BÀN GIAO (cho KTV xem xét điểm danh)
+========================= */
+
+function handoverNoteText(item) {
+  if (item.date_invalid) {
+    return `Ngày sử dụng không hợp lệ (${item.date || "trống"}) – kiểm tra lại đăng ký`;
+  }
+
+  const parts = [];
+  if (item.handover_missed) parts.push("Lượt này chưa bàn giao");
+  if (item.missed_in_month) {
+    parts.push(`Chưa bàn giao ${item.missed_in_month} lần trong tháng ${item.missed_month}`
+      + (item.missed_in_month >= item.missed_limit ? " – đạt ngưỡng khóa" : ""));
+  }
+  return parts.join(" · ");
+}
+
+function hasHandoverFlag(item) {
+  return Boolean(item.date_invalid || item.handover_missed || item.missed_in_month);
+}
+
+function handoverNoteHtml(item) {
+  const text = handoverNoteText(item);
+  if (!text) return "";
+
+  return item.date_invalid
+    ? `<span class="handover-flag is-warning">${escapeHtml(text)}</span>`
+    : `<span class="handover-flag" title="Xem xét trước khi điểm danh">${escapeHtml(text)}</span>`;
+}
+
+function renderHandoverLegend() {
+  const box = document.getElementById("handoverFlagLegend");
+  if (!box) return;
+  const flagged = (filteredAttendanceData || []).filter(item => item.handover_missed || item.missed_in_month);
+  const students = new Set(flagged.map(item => item.student_id || item.name)).size;
+  box.hidden = !flagged.length;
+  box.querySelector("b").textContent = students;
+}
+
+/* =========================
+   BẢNG THEO NHÓM
+   - Cá nhân: 1 dòng.
+   - Nhóm: hiện người đại diện, bấm để sổ danh sách thành viên.
+   - Đang tìm kiếm / lọc trạng thái: tự mở nhóm có thành viên phù hợp.
+========================= */
+
+const expandedGroups = new Set();
+let expandAllGroups = false;
+
+function isRepresentative(item) {
+  return removeVietnameseAccent(item.role || "").toLowerCase().includes("chinh");
+}
+
+function attendanceFilterActive() {
+  const search = document.getElementById("attendanceSearch");
+  const status = document.getElementById("filterStatus");
+  return Boolean((search && search.value.trim()) || (status && status.value));
+}
+
+function buildAttendanceGroups() {
+  const groups = [];
+  const byKey = {};
+
+  filteredAttendanceData.forEach(item => {
+    // 1 mã đăng ký có thể dùng cho nhiều ca -> mỗi ca là 1 nhóm điểm danh riêng
+    const key = item.booking_id ? `b:${item.booking_id}|${item.date}|${item.shift}` : `r:${item.row_id}`;
+
+    if (!byKey[key]) {
+      byKey[key] = { key, booking_id: item.booking_id, items: [] };
+      groups.push(byKey[key]);
+    }
+    byKey[key].items.push(item);
+  });
+
+  groups.forEach(group => {
+    // Toàn bộ thành viên của lượt (không phụ thuộc bộ lọc) để đếm và lấy người đại diện
+    const all = group.booking_id
+      ? attendanceData.filter(item => item.booking_id === group.booking_id
+          && item.date === group.items[0].date && item.shift === group.items[0].shift)
+      : group.items;
+
+    group.all = all;
+    group.lead = all.find(isRepresentative) || group.items[0];
+    group.members = group.items.filter(item => item !== group.lead);
+    group.isGroup = all.length > 1;
+  });
+
+  return groups;
+}
+
+function attendanceStatusSelect(item) {
+  return `
+    <select class="status-select ${getStatusClass(item.attendance_status)}"
+            onchange="updateAttendanceStatus(${item.row_id}, this.value)">
+      <option value="Chưa điểm danh" ${item.attendance_status === "Chưa điểm danh" ? "selected" : ""}>Chưa điểm danh</option>
+      <option value="Có mặt" ${item.attendance_status === "Có mặt" ? "selected" : ""}>Có mặt</option>
+      <option value="Vắng" ${item.attendance_status === "Vắng" ? "selected" : ""}>Vắng</option>
+    </select>`;
+}
+
+function renderAttendanceTable() {
+  renderHandoverLegend();
+  renderGroupToolbar();
+
+  const tbody = document.getElementById("attendanceTableBody");
+  if (!tbody) return;
+
+  if (!filteredAttendanceData.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="attendance-empty">
+          Không có sinh viên phù hợp với bộ lọc
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  const autoOpen = attendanceFilterActive();
+
+  tbody.innerHTML = buildAttendanceGroups().map(group => {
+    const lead = group.lead;
+
+    if (!group.isGroup) {
+      return attendanceRow(lead, "");
+    }
+
+    const open = expandAllGroups || expandedGroups.has(group.key) || (autoOpen && group.members.length > 0);
+    const marked = group.all.filter(item => item.attendance_status !== "Chưa điểm danh").length;
+    const present = group.all.filter(item => item.attendance_status === "Có mặt").length;
+    const flaggedMembers = group.all.filter(item => item !== lead && hasHandoverFlag(item)).length;
+    const memberCount = group.all.length - 1;
+
+    const toggle = `
+      <button type="button" class="group-toggle ${open ? "is-open" : ""}" onclick="toggleAttendanceGroup('${escapeJs(group.key)}')"
+              aria-expanded="${open}">
+        <span class="group-caret" aria-hidden="true"></span>
+        ${memberCount} thành viên · đã điểm danh ${marked}/${group.all.length}
+      </button>
+      ${lead.handover_mode === "ĐẠI DIỆN" || lead.handover_mode === "TỪNG THÀNH VIÊN"
+        ? `<span class="group-mode">Bàn giao: ${lead.handover_mode === "ĐẠI DIỆN" ? "người đại diện" : "từng thành viên"}</span>`
+        : ""}
+      ${!open && flaggedMembers ? `<span class="handover-flag">${flaggedMembers} thành viên có ghi chú bàn giao</span>` : ""}
+      ${open && present < group.all.length ? `<button type="button" class="group-all-present" onclick="markGroupPresent('${escapeJs(group.key)}')">Đánh dấu cả nhóm có mặt</button>` : ""}`;
+
+    const memberRows = open
+      ? (autoOpen ? group.members : group.all.filter(item => item !== lead))
+          .map(item => attendanceRow(item, "member-row"))
+          .join("")
+      : "";
+
+    return attendanceRow(lead, `group-lead ${open ? "is-open" : ""}`, toggle) + memberRows;
+  }).join("");
+}
+
+function attendanceRow(item, extraClass, extraHtml) {
+  const classes = [extraClass, hasHandoverFlag(item) ? (item.date_invalid ? "has-date-warning" : "has-handover-flag") : ""]
+    .filter(Boolean).join(" ");
+  const isMember = extraClass === "member-row";
+
+  return `
+    <tr class="${classes}">
+      <td>${escapeHtml(item.student_id || "Chưa có MSSV")}</td>
+      <td class="name-cell">
+        <b>${isMember ? '<span class="member-branch" aria-hidden="true"></span>' : ""}${escapeHtml(item.name || "-")}</b>
+        ${handoverNoteHtml(item)}
+        ${extraHtml || ""}
+      </td>
+      <td>${escapeHtml(item.booking_id || "-")}</td>
+      <td>${escapeHtml(item.lab || "-")}</td>
+      <td>${escapeHtml(item.date || "-")}</td>
+      <td>${escapeHtml(item.shift || "-")}</td>
+      <td>${escapeHtml(isMember ? "Thành viên" : (item.register_type === "Nhóm" || extraClass.includes("group-lead") ? "Đại diện nhóm" : "Cá nhân"))}</td>
+      <td>${attendanceStatusSelect(item)}</td>
+    </tr>`;
+}
+
+function toggleAttendanceGroup(key) {
+  if (expandedGroups.has(key)) {
+    expandedGroups.delete(key);
+  } else {
+    expandedGroups.add(key);
+  }
+  renderAttendanceTable();
+}
+
+function toggleAllAttendanceGroups() {
+  expandAllGroups = !expandAllGroups;
+  if (!expandAllGroups) expandedGroups.clear();
+  renderAttendanceTable();
+}
+
+function renderGroupToolbar() {
+  const button = document.getElementById("toggleAllGroups");
+  if (!button) return;
+  const hasGroups = buildAttendanceGroups().some(group => group.isGroup);
+  button.hidden = !hasGroups;
+  button.textContent = expandAllGroups ? "Thu gọn các nhóm" : "Mở tất cả nhóm";
+}
+
+async function markGroupPresent(key) {
+  const group = buildAttendanceGroups().find(item => item.key === key);
+  if (!group) return;
+
+  const pending = group.all.filter(item => item.attendance_status !== "Có mặt");
+  if (!pending.length) return;
+
+  const ok = await vluConfirm({
+    title: "Điểm danh cả nhóm",
+    intro: `Đánh dấu "Có mặt" cho ${pending.length} sinh viên của lượt ${group.booking_id} (${group.lead.shift || ""})?`,
+    rows: pending.map(item => [item.student_id || "-", item.name || "-"]),
+    note: "Sinh viên vắng thì chỉnh lại từng người sau khi đánh dấu.",
+    okText: "Đánh dấu có mặt",
+    cancelText: "Hủy"
+  });
+  if (!ok) return;
+
+  for (const item of pending) {
+    await updateAttendanceStatus(item.row_id, "Có mặt");
+  }
+}
+
+
+/* =========================
+   SUMMARY
+========================= */
+
+function renderAttendanceSummary() {
+  const total = filteredAttendanceData.length;
+
+  const present = filteredAttendanceData.filter(item =>
+    item.attendance_status === "Có mặt"
+  ).length;
+
+  const absent = filteredAttendanceData.filter(item =>
+    item.attendance_status === "Vắng"
+  ).length;
+
+  const pending = filteredAttendanceData.filter(item =>
+    !item.attendance_status || item.attendance_status === "Chưa điểm danh"
+  ).length;
+
+  setHtml("statTotal", `${total} <span>sinh viên</span>`);
+  setHtml("statPresent", `${present} <span>sinh viên</span>`);
+  setHtml("statPending", `${pending} <span>sinh viên</span>`);
+  setHtml("statAbsent", `${absent} <span>sinh viên</span>`);
+}
+
+function setHtml(id, value) {
+  const el = document.getElementById(id);
+
+  if (el) {
+    el.innerHTML = value;
+  }
+}
+
+/* =========================
+   SAVE ATTENDANCE
+========================= */
+
+async function updateAttendanceStatus(rowId, status) {
+  const item = attendanceData.find(record => record.row_id === rowId);
+
+  if (!item) {
+    alert("Không tìm thấy dòng điểm danh cần cập nhật.");
+    return;
+  }
+
+  const oldStatus = item.attendance_status;
+
+  item.attendance_status = status;
+
+  renderAttendanceTable();
+  renderAttendanceSummary();
+
+  try {
+    const res = await fetch("/api/save-attendance-status", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        booking_id: item.booking_id,
+        student_id: item.student_id,
+        name: item.name,
+        lab: item.lab,
+        date: item.date,
+        shift: item.shift,
+        role: item.role,
+        attendance_status: status
+      })
+    });
+
+    const json = await res.json();
+
+    console.log("SAVE ATTENDANCE RESPONSE:", json);
+
+    if (!json.success) {
+      item.attendance_status = oldStatus;
+      renderAttendanceTable();
+      renderAttendanceSummary();
+
+      alert(json.error || "Không thể lưu trạng thái điểm danh.");
+    }
+
+  } catch (error) {
+    console.error("SAVE ATTENDANCE ERROR:", error);
+
+    item.attendance_status = oldStatus;
+    renderAttendanceTable();
+    renderAttendanceSummary();
+
+    alert("Lỗi lưu trạng thái điểm danh. Vui lòng kiểm tra API /api/save-attendance-status.");
+  }
+}
+
+/* =========================
+   STATUS CLASS
+========================= */
+
+function getStatusClass(status) {
+  if (status === "Có mặt") return "status-present";
+  if (status === "Vắng") return "status-absent";
+  return "status-pending";
+}
+
+/* =========================
+   DATE HELPER
+========================= */
+
+function parseAttendanceDateTime(dateInput, shift) {
+  if (!dateInput) return 0;
+
+  const parts = String(dateInput).split("-");
+
+  if (parts.length !== 3) return 0;
+
+  const year = Number(parts[0]);
+  const month = Number(parts[1]) - 1;
+  const day = Number(parts[2]);
+
+  let hour = 0;
+  let minute = 0;
+
+  if (shift === "Ca 1") {
+    hour = 7;
+    minute = 0;
+  } else if (shift === "Ca 2") {
+    hour = 9;
+    minute = 30;
+  } else if (shift === "Ca 3") {
+    hour = 13;
+    minute = 0;
+  } else if (shift === "Ca 4") {
+    hour = 15;
+    minute = 30;
+  }
+
+  return new Date(year, month, day, hour, minute).getTime();
+}
+
+function convertAnyDateToInputDate(dateText) {
+  if (!dateText) return "";
+
+  const text = String(dateText).trim();
+
+  let match = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+
+  if (match) {
+    const dd = String(match[1]).padStart(2, "0");
+    const mm = String(match[2]).padStart(2, "0");
+    const yyyy = match[3];
+
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  match = text.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+
+  if (match) {
+    const yyyy = match[1];
+    const mm = String(match[2]).padStart(2, "0");
+    const dd = String(match[3]).padStart(2, "0");
+
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  return "";
+}
+
+/* =========================
+   NOTIFICATION
+========================= */
+
+async function loadSystemNotifications() {
+  const countEl = document.getElementById("notificationCount");
+  const listEl = document.getElementById("notificationList");
+  const statusEl = document.getElementById("notificationStatus");
+
+  if (!countEl || !listEl) return;
+
+  try {
+    const res = await fetch("/api/notifications");
+    const json = await res.json();
+
+    if (!json.success) {
+      countEl.innerText = "0";
+
+      listEl.innerHTML = `
+        <p class="notification-empty">
+          Không thể tải thông báo
+        </p>
+      `;
+
+      if (statusEl) {
+        statusEl.innerText = "Lỗi";
+      }
+
+      return;
+    }
+
+    const data = json.data || [];
+    const hiddenNotifications = getHiddenNotifications();
+
+    const visibleData = data.filter(item => {
+      const id = item.notification_id || `${item.type}-${item.id_key}`;
+      return !hiddenNotifications.includes(id);
+    });
+
+    countEl.innerText = visibleData.length;
+
+    if (statusEl) {
+      statusEl.innerText = `${visibleData.length} thông báo`;
+    }
+
+    if (!visibleData.length) {
+      listEl.innerHTML = `
+        <p class="notification-empty">
+          Chưa có thông báo mới
+        </p>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = visibleData.map(item => {
+      const levelClass = getNotificationLevelClass(item.level);
+      const notificationId = item.notification_id || `${item.type}-${item.id_key}`;
+
+      return `
+        <div class="notification-item ${levelClass}" data-id="${escapeHtml(notificationId)}">
+          <button class="notification-close"
+                  type="button"
+                  onclick="hideNotification('${escapeJs(notificationId)}')">
+            ×
+          </button>
+
+          <b>${escapeHtml(String(item.title || "THÔNG BÁO").toUpperCase())}</b>
+          <p>${escapeHtml(item.message || "")}</p>
+          <small>${escapeHtml(item.id_key || "")}</small>
+        </div>
+      `;
+    }).join("");
+
+  } catch (error) {
+    console.error("LOAD NOTIFICATIONS ERROR:", error);
+
+    countEl.innerText = "0";
+
+    listEl.innerHTML = `
+      <p class="notification-empty">
+        Lỗi kết nối thông báo
+      </p>
+    `;
+
+    if (statusEl) {
+      statusEl.innerText = "Lỗi";
+    }
+  }
+}
+
+function toggleNotificationPanel(event) {
+  if (event) {
+    event.stopPropagation();
+  }
+
+  const panel = document.getElementById("notificationPanel");
+
+  if (panel) {
+    panel.classList.toggle("show");
+  }
+}
+
+function getNotificationLevelClass(level) {
+  if (level === "danger") return "notification-danger";
+  if (level === "warning") return "notification-warning";
+  return "notification-info";
+}
+
+function getHiddenNotifications() {
+  try {
+    return JSON.parse(localStorage.getItem("hiddenNotifications") || "[]");
+  } catch (error) {
+    return [];
+  }
+}
+
+function hideNotification(notificationId) {
+  const hidden = getHiddenNotifications();
+
+  if (!hidden.includes(notificationId)) {
+    hidden.push(notificationId);
+  }
+
+  localStorage.setItem("hiddenNotifications", JSON.stringify(hidden));
+
+  const item = document.querySelector(`.notification-item[data-id="${CSS.escape(notificationId)}"]`);
+
+  if (item) {
+    item.remove();
+  }
+
+  const remainingItems = document.querySelectorAll(".notification-item").length;
+
+  const countEl = document.getElementById("notificationCount");
+  const statusEl = document.getElementById("notificationStatus");
+  const listEl = document.getElementById("notificationList");
+
+  if (countEl) countEl.innerText = remainingItems;
+  if (statusEl) statusEl.innerText = `${remainingItems} thông báo`;
+
+  if (remainingItems === 0 && listEl) {
+    listEl.innerHTML = `
+      <p class="notification-empty">
+        Chưa có thông báo mới
+      </p>
+    `;
+  }
+}
+
+document.addEventListener("click", function (event) {
+  const wrapper = document.querySelector(".bell-wrapper");
+  const panel = document.getElementById("notificationPanel");
+
+  if (!wrapper || !panel) return;
+
+  if (!wrapper.contains(event.target)) {
+    panel.classList.remove("show");
+  }
+});
+
+/* =========================
+   SAFE TEXT
+========================= */
+
+function normalizeSearchKeyword(value) {
+  return removeVietnameseAccent(String(value || ""))
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function escapeHtml(text) {
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function escapeJs(text) {
+  return String(text || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/"/g, "&quot;")
+    .replace(/\n/g, " ");
+}
+
+function exportAttendanceExcel() {
+  const data = filteredAttendanceData || [];
+
+  if (!data.length) {
+    alert("Không có dữ liệu để xuất Excel.");
+    return;
+  }
+
+  const rows = data.map(item => `
+    <tr>
+      <td>${escapeHtml(item.student_id || "")}</td>
+      <td>${escapeHtml(item.name || "")}</td>
+      <td>${escapeHtml(item.booking_id || "")}</td>
+      <td>${escapeHtml(item.lab || "")}</td>
+      <td>${escapeHtml(item.date || "")}</td>
+      <td>${escapeHtml(item.shift || "")}</td>
+      <td>${escapeHtml(item.role || "")}</td>
+      <td>${escapeHtml(item.attendance_status || "")}</td>
+      <td style="color:#C00000;font-weight:bold">${escapeHtml(handoverNoteText(item))}</td>
+    </tr>
+  `).join("");
+
+  const html = `
+    <html>
+      <head>
+        <meta charset="UTF-8">
+      </head>
+      <body>
+        <table border="1">
+          <thead>
+            <tr>
+              <th>Mã sinh viên</th>
+              <th>Họ tên</th>
+              <th>Mã đăng ký</th>
+              <th>Lab</th>
+              <th>Ngày</th>
+              <th>Ca</th>
+              <th>Loại</th>
+              <th>Trạng thái điểm danh</th>
+              <th>Ghi chú bàn giao</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob(["\ufeff" + html], {
+    type: "application/vnd.ms-excel;charset=utf-8;"
+  });
+
+  const link = document.createElement("a");
+  const today = new Date().toISOString().slice(0, 10);
+
+  link.href = URL.createObjectURL(blob);
+  link.download = `theo_doi_ra_vao_${today}.xls`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+/* =========================
+   INIT
+========================= */
+
+document.addEventListener("DOMContentLoaded", function () {
+  const dateInput = document.getElementById("filterDate");
+  const labInput = document.getElementById("filterLab");
+  const shiftInput = document.getElementById("filterShift");
+
+  if (dateInput) dateInput.addEventListener("change", applyAttendanceFilter);
+  if (labInput) labInput.addEventListener("change", applyAttendanceFilter);
+  if (shiftInput) shiftInput.addEventListener("change", applyAttendanceFilter);
+
+  // Bộ lọc trạng thái (bản gốc chưa gắn sự kiện)
+  const statusInput = document.getElementById("filterStatus");
+  if (statusInput) statusInput.addEventListener("change", applyAttendanceFilter);
+
+  // Tìm kiếm: lọc ngay khi gõ
+  const searchInput = document.getElementById("attendanceSearch");
+  if (searchInput) searchInput.addEventListener("input", applyAttendanceFilter);
+
+  loadAttendanceBookings();
+  loadSystemNotifications();
+
+  setInterval(loadSystemNotifications, 60000);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,941 @@
+{% extends "base.html" %}
+{% set active_page = "cleaning" %}
+{% set page_title = "Vệ sinh & bàn giao" %}
+{% set page_desc = "Kiểm tra tình trạng bàn giao phòng Lab và hình ảnh trước – sau khi sử dụng." %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='pages.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- THỐNG KÊ -->
+<section class="stat-grid">
+
+  <div class="stat-card tone-dark">
+    <div class="stat-top">
+      <p class="stat-label">Tổng đăng ký</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M17 3.5V2H7v1.5H4V22h16V3.5h-3Zm-8.5 0h7v.75c0 .69-.56 1.25-1.25 1.25h-4.5c-.69 0-1.25-.56-1.25-1.25V3.5Zm10 17h-13V5h1.605c.33 1.15 1.385 2 2.645 2h4.5c1.255 0 2.315-.85 2.645-2H18.5v15.5Zm-2-7.5H11v1.5h5.5V13Zm-9 1.5V13h2v1.5h-2Zm9 2H11V18h5.5v-1.5Zm-9 1.5v-1.5h2V18h-2Zm9-8.5H11V11h5.5V9.5Zm-9 1.5V9.5h2V11h-2Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statTotal">0</h3>
+    <div class="stat-foot">Lượt đăng ký theo bộ lọc hiện tại</div>
+  </div>
+
+  <div class="stat-card tone-green">
+    <div class="stat-top">
+      <p class="stat-label">Đã bàn giao</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M2 12c0 5.515 4.485 10 10 10s10-4.485 10-10S17.515 2 12 2 2 6.485 2 12Zm1.5 0c0-4.685 3.815-8.5 8.5-8.5 4.685 0 8.5 3.815 8.5 8.5 0 4.685-3.815 8.5-8.5 8.5-4.685 0-8.5-3.815-8.5-8.5Zm6.115 3.175c.245.245.565.365.885.365.32 0 .64-.12.885-.365L17.28 9.28l-1.06-1.06-5.72 5.72-2.22-2.22-1.06 1.06 2.395 2.395Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statDone">0</h3>
+    <div class="stat-foot" data-share-of="statTotal" data-share-text="tổng lượt">&nbsp;</div>
+  </div>
+
+  <div class="stat-card tone-amber">
+    <div class="stat-top">
+      <p class="stat-label">Chưa bàn giao</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="m20.285 6.28-1.77 1.77h.005a8.464 8.464 0 0 1 1.985 5.45c0 4.685-3.815 8.5-8.5 8.5-4.685 0-8.5-3.815-8.5-8.5 0-4.43 3.415-8.08 7.75-8.46V3.5h-2.25V2h6v1.5h-2.25v1.54a8.455 8.455 0 0 1 4.7 1.95l1.77-1.77 1.06 1.06ZM5 13.5c0 3.86 3.14 7 7 7s7-3.14 7-7-3.14-7-7-7-7 3.14-7 7Zm6.25-5h1.5v6h-1.5v-6Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statPending">0</h3>
+    <div class="stat-foot" data-share-of="statTotal" data-share-text="tổng lượt">&nbsp;</div>
+  </div>
+
+  <div class="stat-card tone-red">
+    <div class="stat-top">
+      <p class="stat-label">Tỷ lệ bàn giao</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.75 12.5h9.265l-.02-.77a9.99 9.99 0 0 0-9.725-9.725l-.77-.02v9.265c0 .69.56 1.25 1.25 1.25Zm7.69-1.5H13V3.56A8.493 8.493 0 0 1 20.44 11ZM3.5 12c0 4.685 3.815 8.5 8.5 8.5 3.965 0 7.345-2.785 8.255-6.5h1.535c-.94 4.545-5 8-9.79 8-5.515 0-10-4.485-10-10 0-4.83 3.44-8.87 8-9.8v1.545C6.275 4.65 3.5 8.005 3.5 12Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statRate">0%</h3>
+    <div class="stat-foot" data-self-percent data-share-text="Đã bàn giao / tổng lượt đăng ký">&nbsp;</div>
+  </div>
+
+</section>
+
+<!-- BỘ LỌC -->
+<section class="card filter-bar cleaning-filter">
+
+  <div class="field search-field">
+    <label for="cleaningSearch">Tìm kiếm</label>
+    <div class="search-box">
+      <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m21.78 20.72-5.62-5.62A7.96 7.96 0 0 0 18 10c0-4.41-3.59-8-8-8s-8 3.59-8 8 3.59 8 8 8a7.96 7.96 0 0 0 5.1-1.84l5.62 5.62 1.06-1.06ZM10 16.5A6.506 6.506 0 0 1 3.5 10c0-3.585 2.915-6.5 6.5-6.5s6.5 2.915 6.5 6.5-2.915 6.5-6.5 6.5Z" fill="currentColor"/></svg>
+      <input type="search" id="cleaningSearch" placeholder="ID đăng ký, sinh viên, trạng thái..." autocomplete="off">
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="cleaningDateFilter">Ngày đăng ký</label>
+    <input type="date" id="cleaningDateFilter">
+  </div>
+
+  <div class="field">
+    <label for="cleaningLabFilter">Phòng Lab</label>
+    <select id="cleaningLabFilter">
+      <option value="">Tất cả Lab</option>
+      <option value="Lab 1">Lab 1</option>
+      <option value="Lab 2">Lab 2</option>
+      <option value="Lab 3">Lab 3</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="cleaningShiftFilter">Ca</label>
+    <select id="cleaningShiftFilter">
+      <option value="">Tất cả ca</option>
+      <option value="Ca 1">Ca 1</option>
+      <option value="Ca 2">Ca 2</option>
+      <option value="Ca 3">Ca 3</option>
+      <option value="Ca 4">Ca 4</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="cleaningStatusFilter">Trạng thái</label>
+    <select id="cleaningStatusFilter">
+      <option value="">Tất cả trạng thái</option>
+      <option value="Đã bàn giao">Đã bàn giao</option>
+      <option value="Chưa bàn giao">Chưa bàn giao</option>
+      <option value="Cần kiểm tra">Cần kiểm tra</option>
+    </select>
+  </div>
+
+  <button class="export-btn" type="button" onclick="exportCleaningCSV()">
+    <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.885 16.675a1.245 1.245 0 0 1-.885.365c-.32 0-.64-.12-.885-.365L6.47 12.03l1.06-1.06 3.72 3.72V3h1.5v11.69l3.72-3.72 1.06 1.06-4.645 4.645ZM19.5 18.25V15.5H21v2.75A2.755 2.755 0 0 1 18.25 21H5.75A2.755 2.755 0 0 1 3 18.25V15.5h1.5v2.75c0 .69.56 1.25 1.25 1.25h12.5c.69 0 1.25-.56 1.25-1.25Z" fill="currentColor"/></svg> Xuất Excel
+  </button>
+
+</section>
+
+<!-- BẢNG -->
+<section class="card card-pad cleaning-table-card">
+
+  <h3>Danh sách bàn giao vệ sinh</h3>
+
+  <div class="table-wrap">
+    <table class="cleaning-table">
+      <thead>
+        <tr>
+          <th>ID đăng ký</th>
+          <th>Phòng</th>
+          <th>Ca</th>
+          <th>Ngày đăng ký</th>
+          <th>Ngày bàn giao</th>
+          <th>Sinh viên bàn giao</th>
+          <th>Trạng thái</th>
+          <th>Hình ảnh</th>
+        </tr>
+      </thead>
+
+      <tbody id="cleaningTableBody">
+        <tr>
+          <td colspan="8" class="cleaning-empty">Đang tải dữ liệu...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+<!-- MODAL XEM ẢNH -->
+<div class="image-modal" id="imageModal">
+  <div class="image-modal-content">
+
+    <div class="image-modal-head">
+      <h3>Hình ảnh bàn giao vệ sinh</h3>
+      <button type="button" onclick="closeImageModal()" aria-label="Đóng">×</button>
+    </div>
+
+    <div class="image-modal-body">
+      <div class="image-box">
+        <h4>Ảnh trước khi sử dụng</h4>
+        <img id="beforeImagePreview" src="" alt="Ảnh trước">
+        <a id="beforeImageLink" href="#" target="_blank">Mở ảnh gốc</a>
+      </div>
+
+      <div class="image-box">
+        <h4>Ảnh sau khi vệ sinh</h4>
+        <img id="afterImagePreview" src="" alt="Ảnh sau">
+        <a id="afterImageLink" href="#" target="_blank">Mở ảnh gốc</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* =========================
+   CONFIG
+========================= */
+
+const LABS = ["Lab 1", "Lab 2", "Lab 3"];
+const SHIFTS = ["Ca 1", "Ca 2", "Ca 3", "Ca 4"];
+
+/* =========================
+   USER MENU
+========================= */
+
+function toggleUserMenu() {
+  const panel = document.getElementById("userPanel");
+
+  if (panel) {
+    panel.classList.toggle("show");
+  }
+}
+
+
+
+/* =========================
+   GLOBAL DATA
+========================= */
+
+let cleaningData = [];
+let filteredCleaningData = [];
+
+/* =========================
+   LOAD DATA
+========================= */
+
+async function loadCleaningReport() {
+  const tbody = document.getElementById("cleaningTableBody");
+
+  try {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="cleaning-empty">
+          Đang tải dữ liệu...
+        </td>
+      </tr>
+    `;
+
+    const res = await fetch("/api/cleaning-report");
+    const json = await res.json();
+
+    console.log("CLEANING API RAW:", json);
+
+    if (!json.success) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="cleaning-empty">
+            Không thể tải dữ liệu báo cáo vệ sinh: ${escapeHtml(json.error || "")}
+          </td>
+        </tr>
+      `;
+
+      cleaningData = [];
+      filteredCleaningData = [];
+      renderCleaningStats();
+      return;
+    }
+
+    cleaningData = normalizeCleaningData(json.data || []);
+
+    cleaningData.sort((a, b) => {
+      const dateA = parseCleaningDateTime(a.booking_date || a.handover_date);
+      const dateB = parseCleaningDateTime(b.booking_date || b.handover_date);
+
+      return dateA - dateB;
+    });
+
+    filteredCleaningData = [...cleaningData];
+
+    setDefaultTodayDate();
+    applyCleaningFilter();
+
+  } catch (error) {
+    console.error("LOAD CLEANING REPORT ERROR:", error);
+
+    cleaningData = [];
+    filteredCleaningData = [];
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="cleaning-empty">
+          Lỗi tải dữ liệu báo cáo vệ sinh. Vui lòng kiểm tra API /api/cleaning-report.
+        </td>
+      </tr>
+    `;
+
+    renderCleaningStats();
+  }
+}
+
+/* =========================
+   NORMALIZE DATA
+========================= */
+
+function normalizeCleaningData(data) {
+  return data.map(item => {
+    return {
+      id_key: String(item.id_key || "").trim(),
+      lab: normalizeLab(item.lab || ""),
+      shift: normalizeShift(item.shift || ""),
+      booking_date: String(item.booking_date || "").trim(),
+      handover_date: String(item.handover_date || "").trim(),
+      handover_student: String(item.handover_student || "").trim(),
+      status: normalizeStatus(item.status || ""),
+      before_image: getFirstLink(item.before_image || ""),
+      after_image: getFirstLink(item.after_image || ""),
+      folder_link: String(item.folder_link || "").trim(),
+      slot_folder_link: String(item.slot_folder_link || "").trim(),
+      error_message: String(item.error_message || "").trim()
+    };
+  }).filter(item => {
+    const hasBasicInfo = item.id_key || item.lab || item.booking_date;
+    const validLab = !item.lab || LABS.includes(item.lab);
+    const validShift = !item.shift || SHIFTS.includes(item.shift);
+
+    return hasBasicInfo && validLab && validShift;
+  });
+}
+
+function removeVietnameseAccent(str) {
+  return String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+}
+
+function normalizeSearchText(value) {
+  return removeVietnameseAccent(String(value || ""))
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function normalizeLab(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return "";
+
+  const text = removeVietnameseAccent(raw).toLowerCase();
+
+  if (text.includes("lab 1") || text.includes("lab1")) return "Lab 1";
+  if (text.includes("lab 2") || text.includes("lab2")) return "Lab 2";
+  if (text.includes("lab 3") || text.includes("lab3")) return "Lab 3";
+
+  return raw;
+}
+
+function normalizeShift(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return "";
+
+  const text = removeVietnameseAccent(raw).toLowerCase();
+
+  if (text.includes("ca 1") || text.includes("ca1")) return "Ca 1";
+  if (text.includes("ca 2") || text.includes("ca2")) return "Ca 2";
+  if (text.includes("ca 3") || text.includes("ca3")) return "Ca 3";
+  if (text.includes("ca 4") || text.includes("ca4")) return "Ca 4";
+
+  return raw;
+}
+
+function normalizeStatus(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return "";
+
+  const text = normalizeSearchText(raw);
+
+  if (text.includes("da ban giao") || raw === "DONE") {
+    return "Đã bàn giao";
+  }
+
+  if (text.includes("chua ban giao")) {
+    return "Chưa bàn giao";
+  }
+
+  if (
+    text.includes("can kiem tra") ||
+    text.includes("loi") ||
+    raw === "ERROR"
+  ) {
+    return "Cần kiểm tra";
+  }
+
+  return raw;
+}
+
+function getFirstLink(value) {
+  const text = String(value || "").trim();
+
+  if (!text) return "";
+
+  const parts = text
+    .split(",")
+    .map(item => item.trim())
+    .filter(Boolean);
+
+  return parts.length ? parts[0] : text;
+}
+
+/* =========================
+   FILTER
+========================= */
+
+function setDefaultTodayDate() {
+  const dateInput = document.getElementById("cleaningDateFilter");
+
+  if (!dateInput) return;
+
+  if (dateInput.value) return;
+
+  const today = new Date();
+
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  dateInput.value = `${year}-${month}-${day}`;
+}
+
+function applyCleaningFilter() {
+  const searchInput = document.getElementById("cleaningSearch");
+  const dateInput = document.getElementById("cleaningDateFilter");
+  const labInput = document.getElementById("cleaningLabFilter");
+  const shiftInput = document.getElementById("cleaningShiftFilter");
+  const statusInput = document.getElementById("cleaningStatusFilter");
+
+  const search = normalizeSearchText(searchInput ? searchInput.value : "");
+  const selectedDate = dateInput ? dateInput.value : "";
+  const selectedLab = labInput ? labInput.value : "";
+  const selectedShift = shiftInput ? shiftInput.value : "";
+  const selectedStatus = statusInput ? statusInput.value : "";
+
+  filteredCleaningData = cleaningData.filter(item => {
+    const text = normalizeSearchText([
+      item.id_key,
+      item.lab,
+      item.shift,
+      item.booking_date,
+      item.handover_date,
+      item.handover_student,
+      item.status,
+      item.error_message
+    ].join(" "));
+
+    const itemDate = convertAnyDateToInputDate(item.booking_date);
+
+    const matchSearch = !search || text.includes(search);
+    const matchDate = !selectedDate || itemDate === selectedDate;
+    const matchLab = !selectedLab || item.lab === selectedLab;
+    const matchShift = !selectedShift || item.shift === selectedShift;
+    const matchStatus = !selectedStatus || item.status === selectedStatus;
+
+    return matchSearch && matchDate && matchLab && matchShift && matchStatus;
+  });
+
+  renderCleaningTable();
+  renderCleaningStats();
+}
+
+/* =========================
+   TABLE
+========================= */
+
+function renderCleaningTable() {
+  const tbody = document.getElementById("cleaningTableBody");
+
+  if (!tbody) return;
+
+  if (!filteredCleaningData.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="cleaning-empty">
+          Không có dữ liệu phù hợp với bộ lọc
+        </td>
+      </tr>
+    `;
+
+    const tableInfo = document.getElementById("cleaningTableInfo");
+
+    if (tableInfo) {
+      tableInfo.innerText = "Hiển thị 0 đăng ký";
+    }
+
+    return;
+  }
+
+  tbody.innerHTML = filteredCleaningData.map(item => {
+    const statusClass = getCleaningStatusClass(item.status);
+    const imageCell = buildImageCell(item);
+
+    return `
+      <tr title="${escapeHtml(item.error_message || "")}">
+        <td><b>${escapeHtml(item.id_key || "-")}</b></td>
+        <td>${escapeHtml(item.lab || "-")}</td>
+        <td>${escapeHtml(item.shift || "-")}</td>
+        <td>${escapeHtml(item.booking_date || "-")}</td>
+        <td>${escapeHtml(item.handover_date || "--")}</td>
+        <td>${escapeHtml(item.handover_student || "--")}</td>
+        <td>
+          <span class="cleaning-status ${statusClass}">
+            ${escapeHtml(item.status || "-")}
+          </span>
+        </td>
+        <td>${imageCell}</td>
+      </tr>
+    `;
+  }).join("");
+
+  const tableInfo = document.getElementById("cleaningTableInfo");
+
+  if (tableInfo) {
+    tableInfo.innerText =
+      `Hiển thị ${filteredCleaningData.length} / ${cleaningData.length} đăng ký`;
+  }
+}
+
+/* =========================
+   STATS
+========================= */
+
+function renderCleaningStats() {
+  const total = filteredCleaningData.length;
+
+  const done = filteredCleaningData.filter(item =>
+    item.status === "Đã bàn giao"
+  ).length;
+
+  const pending = filteredCleaningData.filter(item =>
+    item.status === "Chưa bàn giao"
+  ).length;
+
+  const rate = total > 0 ? ((done / total) * 100).toFixed(1) : "0.0";
+
+  setText("statTotal", total);
+  setText("statDone", done);
+  setText("statPending", pending);
+  setText("statRate", `${rate}%`);
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+
+  if (el) {
+    el.innerText = value;
+  }
+}
+
+/* =========================
+   IMAGE
+========================= */
+
+function buildImageCell(item) {
+  if (item.status === "Đã bàn giao" && (item.before_image || item.after_image)) {
+    return `
+      <button class="image-view-btn"
+              type="button"
+              onclick="openImageModal('${escapeJs(item.before_image)}', '${escapeJs(item.after_image)}')">
+        <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.75 3h12.5A2.755 2.755 0 0 1 21 5.75v12.5A2.755 2.755 0 0 1 18.25 21H5.75A2.755 2.755 0 0 1 3 18.25V5.75A2.755 2.755 0 0 1 5.75 3Zm12.5 1.5H5.75c-.69 0-1.25.56-1.25 1.25v11.19l3.865-3.865a1.258 1.258 0 0 1 1.77 0L11.5 14.44l4.115-4.115a1.258 1.258 0 0 1 1.77 0L19.5 12.44V5.75c0-.69-.56-1.25-1.25-1.25Zm-12.5 15h12.5v.005c.69 0 1.25-.56 1.25-1.25v-3.69l-3-3-5 5-2.25-2.25-4.57 4.57c.215.365.61.615 1.07.615ZM11 8.5a2.5 2.5 0 0 1-5 0 2.5 2.5 0 0 1 5 0Zm-1.5 0c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1Z" fill="currentColor"/></svg> Xem trước/sau
+      </button>
+    `;
+  }
+
+  if (item.status === "Cần kiểm tra") {
+    const msg = item.error_message
+      ? escapeHtml(item.error_message)
+      : "Cần kiểm tra";
+
+    return `<span class="muted-text" title="${msg}">Kiểm tra ID</span>`;
+  }
+
+  return `<span class="muted-text">Chưa có ảnh</span>`;
+}
+
+function openImageModal(beforeLink, afterLink) {
+  const beforeUrl = convertDriveLinkToImageUrl(beforeLink);
+  const afterUrl = convertDriveLinkToImageUrl(afterLink);
+
+  const beforeImg = document.getElementById("beforeImagePreview");
+  const afterImg = document.getElementById("afterImagePreview");
+
+  const beforeA = document.getElementById("beforeImageLink");
+  const afterA = document.getElementById("afterImageLink");
+
+  if (beforeImg) beforeImg.src = beforeUrl || "";
+  if (afterImg) afterImg.src = afterUrl || "";
+
+  if (beforeA) {
+    beforeA.href = beforeLink || "#";
+    beforeA.style.display = beforeLink ? "inline-block" : "none";
+  }
+
+  if (afterA) {
+    afterA.href = afterLink || "#";
+    afterA.style.display = afterLink ? "inline-block" : "none";
+  }
+
+  const modal = document.getElementById("imageModal");
+
+  if (modal) {
+    modal.classList.add("show");
+  }
+}
+
+function closeImageModal() {
+  const modal = document.getElementById("imageModal");
+
+  if (modal) {
+    modal.classList.remove("show");
+  }
+
+  const beforeImg = document.getElementById("beforeImagePreview");
+  const afterImg = document.getElementById("afterImagePreview");
+
+  if (beforeImg) beforeImg.src = "";
+  if (afterImg) afterImg.src = "";
+}
+
+function convertDriveLinkToImageUrl(link) {
+  if (!link) return "";
+
+  const str = String(link).trim();
+
+  const match =
+    str.match(/id=([^&]+)/) ||
+    str.match(/\/file\/d\/([^/]+)/);
+
+  if (match && match[1]) {
+    return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
+  }
+
+  return str;
+}
+
+/* =========================
+   STATUS CLASS
+========================= */
+
+function getCleaningStatusClass(status) {
+  if (status === "Đã bàn giao") return "status-done";
+  if (status === "Chưa bàn giao") return "status-pending";
+  if (status === "Cần kiểm tra") return "status-error";
+
+  return "";
+}
+
+/* =========================
+   DATE HELPER
+========================= */
+
+function parseCleaningDateTime(dateText) {
+  if (!dateText) return 0;
+
+  const text = String(dateText).trim();
+
+  let match = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}):(\d{1,2}))?/);
+
+  if (match) {
+    const dd = Number(match[1]);
+    const mm = Number(match[2]) - 1;
+    const yyyy = Number(match[3]);
+    const hh = Number(match[4] || 0);
+    const mi = Number(match[5] || 0);
+    const ss = Number(match[6] || 0);
+
+    return new Date(yyyy, mm, dd, hh, mi, ss).getTime();
+  }
+
+  match = text.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+
+  if (match) {
+    const yyyy = Number(match[1]);
+    const mm = Number(match[2]) - 1;
+    const dd = Number(match[3]);
+
+    return new Date(yyyy, mm, dd).getTime();
+  }
+
+  return 0;
+}
+
+function convertAnyDateToInputDate(dateText) {
+  if (!dateText) return "";
+
+  const text = String(dateText).trim();
+
+  let match = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+
+  if (match) {
+    const dd = String(match[1]).padStart(2, "0");
+    const mm = String(match[2]).padStart(2, "0");
+    const yyyy = match[3];
+
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  match = text.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+
+  if (match) {
+    const yyyy = match[1];
+    const mm = String(match[2]).padStart(2, "0");
+    const dd = String(match[3]).padStart(2, "0");
+
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  return "";
+}
+
+/* =========================
+   NOTIFICATION
+========================= */
+
+async function loadSystemNotifications() {
+  const countEl = document.getElementById("notificationCount");
+  const listEl = document.getElementById("notificationList");
+  const statusEl = document.getElementById("notificationStatus");
+
+  if (!countEl || !listEl) return;
+
+  try {
+    const res = await fetch("/api/notifications");
+    const json = await res.json();
+
+    if (!json.success) {
+      countEl.innerText = "0";
+
+      listEl.innerHTML = `
+        <p class="notification-empty">
+          Không thể tải thông báo
+        </p>
+      `;
+
+      if (statusEl) {
+        statusEl.innerText = "Lỗi";
+      }
+
+      return;
+    }
+
+    const data = json.data || [];
+
+    countEl.innerText = json.count || 0;
+
+    if (statusEl) {
+      statusEl.innerText = `${json.count || 0} thông báo`;
+    }
+
+    if (!data.length) {
+      listEl.innerHTML = `
+        <p class="notification-empty">
+          Chưa có thông báo mới
+        </p>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = data.map(item => {
+      const levelClass = getNotificationLevelClass(item.level);
+
+      return `
+        <div class="notification-item ${levelClass}">
+          <b>${escapeHtml(item.title || "Thông báo")}</b>
+          <p>${escapeHtml(item.message || "")}</p>
+          <small>${escapeHtml(item.id_key || "")}</small>
+        </div>
+      `;
+    }).join("");
+
+  } catch (error) {
+    console.error("LOAD NOTIFICATIONS ERROR:", error);
+
+    countEl.innerText = "0";
+
+    listEl.innerHTML = `
+      <p class="notification-empty">
+        Lỗi kết nối thông báo
+      </p>
+    `;
+
+    if (statusEl) {
+      statusEl.innerText = "Lỗi";
+    }
+  }
+}
+
+function toggleNotificationPanel(event) {
+  if (event) {
+    event.stopPropagation();
+  }
+
+  const panel = document.getElementById("notificationPanel");
+
+  if (panel) {
+    panel.classList.toggle("show");
+  }
+}
+
+function getNotificationLevelClass(level) {
+  if (level === "danger") return "notification-danger";
+  if (level === "warning") return "notification-warning";
+  return "notification-info";
+}
+
+document.addEventListener("click", function (event) {
+  const wrapper = document.querySelector(".bell-wrapper");
+  const panel = document.getElementById("notificationPanel");
+
+  if (!wrapper || !panel) return;
+
+  if (!wrapper.contains(event.target)) {
+    panel.classList.remove("show");
+  }
+});
+
+/* =========================
+   EXPORT CSV
+========================= */
+function exportCleaningCSV() {
+  const headers = [
+    "ID đăng ký",
+    "Phòng",
+    "Ca",
+    "Ngày đăng ký",
+    "Ngày bàn giao",
+    "Sinh viên bàn giao",
+    "Trạng thái",
+    "Lỗi hệ thống",
+    "Ảnh trước",
+    "Ảnh sau"
+  ];
+
+  const rows = filteredCleaningData.map(item => [
+    item.id_key || "",
+    item.lab || "",
+    item.shift || "",
+    item.booking_date || "",
+    item.handover_date || "",
+    item.handover_student || "",
+    item.status || "",
+    item.error_message || "",
+    item.before_image || "",
+    item.after_image || ""
+  ]);
+
+  function escapeExcel(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  const headerHtml = headers
+    .map(header => `<th>${escapeExcel(header)}</th>`)
+    .join("");
+
+  const bodyHtml = rows
+    .map(row => {
+      return `
+        <tr>
+          ${row.map(cell => `<td>${escapeExcel(cell)}</td>`).join("")}
+        </tr>
+      `;
+    })
+    .join("");
+
+  const htmlContent = `
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+          }
+
+          th {
+            background: #eaf1f8;
+            font-weight: bold;
+            text-align: left;
+          }
+
+          th, td {
+            border: 1px solid #999999;
+            padding: 6px;
+            mso-number-format: "\\@";
+          }
+        </style>
+      </head>
+
+      <body>
+        <table>
+          <thead>
+            <tr>${headerHtml}</tr>
+          </thead>
+
+          <tbody>
+            ${bodyHtml}
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob(["\uFEFF" + htmlContent], {
+    type: "application/vnd.ms-excel;charset=utf-8;"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "bao_cao_ve_sinh.xls";
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+}
+/* =========================
+   SAFE TEXT
+========================= */
+
+function escapeHtml(text) {
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function escapeJs(text) {
+  return String(text || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/"/g, "&quot;")
+    .replace(/\n/g, " ");
+}
+
+/* =========================
+   INIT
+========================= */
+
+document.addEventListener("DOMContentLoaded", function () {
+  const searchInput = document.getElementById("cleaningSearch");
+  const dateInput = document.getElementById("cleaningDateFilter");
+  const labInput = document.getElementById("cleaningLabFilter");
+  const shiftInput = document.getElementById("cleaningShiftFilter");
+  const statusInput = document.getElementById("cleaningStatusFilter");
+
+  if (searchInput) searchInput.addEventListener("input", applyCleaningFilter);
+  if (dateInput) dateInput.addEventListener("change", applyCleaningFilter);
+  if (labInput) labInput.addEventListener("change", applyCleaningFilter);
+  if (shiftInput) shiftInput.addEventListener("change", applyCleaningFilter);
+  if (statusInput) statusInput.addEventListener("change", applyCleaningFilter);
+
+  loadCleaningReport();
+  loadSystemNotifications();
+
+  setInterval(loadSystemNotifications, 60000);
+});
+</script>
+{% endblock %}

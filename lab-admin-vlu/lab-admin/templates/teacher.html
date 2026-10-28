@@ -1,0 +1,913 @@
+{% extends "base.html" %}
+{% set active_page = "teacher" %}
+{% set page_title = "Theo dõi sinh viên theo lớp" %}
+{% set page_desc = "Giảng viên tải danh sách lớp lên, hệ thống tự đối chiếu MSSV với dữ liệu đăng ký phòng Lab và kết quả điểm danh của kỹ thuật viên." %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='pages.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="teacher-layout">
+
+  <!-- =================================================
+       CỘT TRÁI: TẢI DANH SÁCH + LỚP ĐÃ TẢI
+  ================================================== -->
+  <aside class="upload-card stack">
+
+    <section class="card card-pad">
+
+      <h3 class="section-title">Tải danh sách lớp</h3>
+
+      <ol class="upload-steps">
+        <li>Chuẩn bị file Excel/CSV có cột <b>MSSV</b>, <b>Họ tên</b>; nên có thêm <b>Nhóm</b> và <b>Đề tài</b> để theo dõi theo nhóm.</li>
+        <li>Nhập <b>Mã lớp</b> nếu file không có cột Mã lớp.</li>
+        <li>Tải lên – hệ thống đối chiếu ngay với dữ liệu phòng Lab.</li>
+      </ol>
+
+      <form id="uploadForm" class="upload-form" novalidate>
+
+        <div class="field">
+          <label for="uploadClassCode">Mã lớp</label>
+          <input id="uploadClassCode" name="class_code" class="input" type="text" maxlength="60" placeholder="Ví dụ: IEM101-01">
+        </div>
+
+        <label class="dropzone" id="dropzone" for="rosterFile">
+          <input id="rosterFile" name="file" type="file" accept=".xlsx,.csv">
+          <span class="dropzone-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M4 2h9.56L20 8.44V22H4V2Zm13.44 6L14 4.56V8h3.44ZM5.5 3.5v17h13v-11h-4.75c-.69 0-1.25-.56-1.25-1.25V3.5h-7Zm2.72 10.72 2.895-2.895a1.258 1.258 0 0 1 1.77 0l2.895 2.895-1.06 1.06-1.97-1.97V18h-1.5v-4.69l-1.97 1.97-1.06-1.06Z" fill="currentColor"/></svg></span>
+          <strong>Chọn hoặc kéo thả file vào đây</strong>
+          <small>Excel (.xlsx) hoặc CSV · tối đa 5 MB</small>
+          <span class="file-name" id="fileName"></span>
+        </label>
+
+        <a class="template-link" href="{{ url_for('teacher_template') }}"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.885 16.675a1.245 1.245 0 0 1-.885.365c-.32 0-.64-.12-.885-.365L6.47 12.03l1.06-1.06 3.72 3.72V3h1.5v11.69l3.72-3.72 1.06 1.06-4.645 4.645ZM19.5 18.25V15.5H21v2.75A2.755 2.755 0 0 1 18.25 21H5.75A2.755 2.755 0 0 1 3 18.25V15.5h1.5v2.75c0 .69.56 1.25 1.25 1.25h12.5c.69 0 1.25-.56 1.25-1.25Z" fill="currentColor"/></svg> Tải file mẫu danh sách lớp</a>
+
+        <p class="hint">Tải lại cùng mã lớp sẽ <b>thay thế</b> danh sách cũ của lớp đó.</p>
+
+        <button type="submit" class="btn btn-red" id="uploadButton"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M11.25 16.5V5.31L7.53 9.03 6.47 7.97l4.645-4.645a1.258 1.258 0 0 1 1.77 0L17.53 7.97l-1.06 1.06-3.72-3.72V16.5h-1.5Zm8.25 1.75V15.5H21v2.75A2.755 2.755 0 0 1 18.25 21H5.75A2.755 2.755 0 0 1 3 18.25V15.5h1.5v2.75c0 .69.56 1.25 1.25 1.25h12.5c.69 0 1.25-.56 1.25-1.25Z" fill="currentColor"/></svg> Tải lên &amp; đối chiếu</button>
+
+        <div class="message" id="uploadMessage"></div>
+
+      </form>
+
+    </section>
+
+    <section class="card card-pad">
+      <h3 class="section-title">Lớp đã tải lên</h3>
+      <ul class="class-list" id="classList">
+        <li class="hint">Đang tải...</li>
+      </ul>
+    </section>
+
+  </aside>
+
+  <!-- =================================================
+       CỘT PHẢI: BÁO CÁO LỚP
+  ================================================== -->
+  <section id="reportArea">
+
+    <div class="card no-class" id="noClass">
+      <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M13 6c0 2.205 1.796 4 4 4 2.206 0 4-1.795 4-4s-1.794-4-4-4c-2.204 0-4 1.795-4 4Zm1.5 0a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1-5 0ZM3 11.5c0 2.205 1.795 4 4 4s4-1.795 4-4-1.795-4-4-4-4 1.795-4 4Zm1.5 0a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1-5 0Zm6.216 9.945-.54-2.02A1.247 1.247 0 0 0 8.97 18.5H5.04c-.565 0-1.06.38-1.205.925l-.54 2.02-1.45-.39.54-2.02a2.755 2.755 0 0 1 2.655-2.04h3.93a2.75 2.75 0 0 1 2.655 2.04l.54 2.015-1.45.39v.005Zm9.46-7.52.54 2.02v-.005l1.45-.39-.54-2.015a2.75 2.75 0 0 0-2.655-2.04h-3.93c-1.24 0-2.335.84-2.655 2.04l-.54 2.02 1.45.39.54-2.02c.145-.545.64-.925 1.205-.925h3.93c.565 0 1.06.38 1.205.925Z" fill="currentColor"/></svg>
+      <h3>Chưa chọn lớp</h3>
+      <p>Tải danh sách lớp hoặc chọn một lớp ở cột bên trái để xem sinh viên nào đã đến phòng Lab.</p>
+    </div>
+
+    <div id="reportContent" hidden>
+
+      <section class="stat-grid">
+
+        <div class="stat-card tone-dark">
+          <div class="stat-top">
+            <p class="stat-label">Sĩ số lớp</p>
+            <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.5 13c-2.755 0-5-2.245-5-5s2.245-5 5-5 5 2.245 5 5-2.245 5-5 5Zm0-8.5C7.57 4.5 6 6.07 6 8s1.57 3.5 3.5 3.5S13 9.93 13 8s-1.57-3.5-3.5-3.5Zm5.5 7V13c2.756 0 5-2.245 5-5s-2.244-5-5-5v1.5c1.93 0 3.5 1.57 3.5 3.5s-1.57 3.5-3.5 3.5Zm5.815 9.694v.001h-.005l.005-.001Zm0 0-.945-3.524A2.258 2.258 0 0 0 17.695 16v-1.5a3.751 3.751 0 0 1 3.62 2.78l.945 3.525-1.445.389Zm-5-.002v.003h-.01l.01-.003Zm-.944-3.522.944 3.522 1.44-.387-.944-3.525a3.751 3.751 0 0 0-3.62-2.78H6.295a3.76 3.76 0 0 0-3.62 2.78l-.945 3.525 1.45.39.945-3.525A2.257 2.257 0 0 1 6.3 16h6.395c1.02 0 1.91.69 2.175 1.67Z" fill="currentColor"/></svg></span>
+          </div>
+          <h3 class="stat-value" id="statClassSize">0</h3>
+          <div class="stat-foot">Sinh viên trong danh sách lớp</div>
+        </div>
+
+        <div class="stat-card tone-blue">
+          <div class="stat-top">
+            <p class="stat-label">SV có đăng ký Lab</p>
+            <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M17.5 3h.75A2.755 2.755 0 0 1 21 5.75v12.5A2.755 2.755 0 0 1 18.25 21H5.75A2.755 2.755 0 0 1 3 18.25V5.75A2.755 2.755 0 0 1 5.75 3h.75V2H8v1h8V2h1.5v1Zm-11 1.5h-.75c-.69 0-1.25.56-1.25 1.25V7.5h15V5.75c0-.69-.56-1.25-1.25-1.25h-.75V6H16V4.5H8V6H6.5V4.5Zm-.75 15h12.5c.69 0 1.25-.56 1.25-1.25V9h-15v9.25c0 .69.56 1.25 1.25 1.25Zm5.5-8.5h1.5v5H14v1.5h-4V16h1.25v-2.5H10V12h1.25v-1Z" fill="currentColor"/></svg></span>
+          </div>
+          <h3 class="stat-value" id="statRegistered">0</h3>
+          <div class="stat-foot" data-share-of="statClassSize" data-share-text="sĩ số lớp">&nbsp;</div>
+        </div>
+
+        <div class="stat-card tone-green">
+          <div class="stat-top">
+            <p class="stat-label">Lượt có mặt</p>
+            <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M2 12c0 5.515 4.485 10 10 10s10-4.485 10-10S17.515 2 12 2 2 6.485 2 12Zm1.5 0c0-4.685 3.815-8.5 8.5-8.5 4.685 0 8.5 3.815 8.5 8.5 0 4.685-3.815 8.5-8.5 8.5-4.685 0-8.5-3.815-8.5-8.5Zm6.115 3.175c.245.245.565.365.885.365.32 0 .64-.12.885-.365L17.28 9.28l-1.06-1.06-5.72 5.72-2.22-2.22-1.06 1.06 2.395 2.395Z" fill="currentColor"/></svg></span>
+          </div>
+          <h3 class="stat-value" id="statPresent">0</h3>
+          <div class="stat-foot" data-share-of="statPresent+statAbsent" data-share-text="lượt đã điểm danh">&nbsp;</div>
+        </div>
+
+        <div class="stat-card tone-red">
+          <div class="stat-top">
+            <p class="stat-label">Lượt vắng</p>
+            <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M2 12C2 6.485 6.485 2 12 2s10 4.485 10 10-4.485 10-10 10S2 17.515 2 12Zm1.5 0c0 4.685 3.815 8.5 8.5 8.5 4.685 0 8.5-3.815 8.5-8.5 0-4.685-3.815-8.5-8.5-8.5-4.685 0-8.5 3.815-8.5 8.5Zm8.5-1.06 3.22-3.22 1.06 1.06L13.06 12l3.22 3.22-1.06 1.06L12 13.06l-3.22 3.22-1.06-1.06L10.94 12 7.72 8.78l1.06-1.06L12 10.94Z" fill="currentColor"/></svg></span>
+          </div>
+          <h3 class="stat-value" id="statAbsent">0</h3>
+          <div class="stat-foot" data-share-of="statPresent+statAbsent" data-share-text="lượt đã điểm danh">&nbsp;</div>
+        </div>
+
+      </section>
+
+      <section class="card filter-bar teacher-filter">
+
+        <div class="field search-field">
+          <label for="studentSearch">Tìm sinh viên</label>
+          <div class="search-box">
+            <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m21.78 20.72-5.62-5.62A7.96 7.96 0 0 0 18 10c0-4.41-3.59-8-8-8s-8 3.59-8 8 3.59 8 8 8a7.96 7.96 0 0 0 5.1-1.84l5.62 5.62 1.06-1.06ZM10 16.5A6.506 6.506 0 0 1 3.5 10c0-3.585 2.915-6.5 6.5-6.5s6.5 2.915 6.5 6.5-2.915 6.5-6.5 6.5Z" fill="currentColor"/></svg>
+            <input type="search" id="studentSearch" placeholder="MSSV, họ tên, nhóm hoặc đề tài" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="dateFrom">Từ ngày</label>
+          <input type="date" id="dateFrom">
+        </div>
+
+        <div class="field">
+          <label for="dateTo">Đến ngày</label>
+          <input type="date" id="dateTo">
+        </div>
+
+        <div class="field" id="groupField" hidden>
+          <label for="groupFilter">Nhóm</label>
+          <select id="groupFilter">
+            <option value="">Tất cả nhóm</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="studentFilter">Tình trạng</label>
+          <select id="studentFilter">
+            <option value="">Tất cả sinh viên</option>
+            <option value="present">Đã đến Lab</option>
+            <option value="absent">Có vắng</option>
+            <option value="pending">Chờ điểm danh</option>
+            <option value="none">Chưa đăng ký Lab</option>
+          </select>
+        </div>
+
+        <button class="btn btn-red" type="button" id="exportButton" onclick="exportClassReport()" title="File Excel gồm 4 sheet: Tổng hợp, Điểm danh, Bàn giao, Chi tiết lượt"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.885 16.675a1.245 1.245 0 0 1-.885.365c-.32 0-.64-.12-.885-.365L6.47 12.03l1.06-1.06 3.72 3.72V3h1.5v11.69l3.72-3.72 1.06 1.06-4.645 4.645ZM19.5 18.25V15.5H21v2.75A2.755 2.755 0 0 1 18.25 21H5.75A2.755 2.755 0 0 1 3 18.25V15.5h1.5v2.75c0 .69.56 1.25 1.25 1.25h12.5c.69 0 1.25-.56 1.25-1.25Z" fill="currentColor"/></svg> Xuất Excel</button>
+
+      </section>
+
+      <section class="card card-pad group-section" id="groupSection" hidden>
+        <div class="group-section-head">
+          <h3 class="section-title">Nhóm trong lớp</h3>
+          <button type="button" class="group-all" id="groupAllButton" onclick="selectGroup('')">Xem tất cả nhóm</button>
+        </div>
+        <div class="group-grid" id="groupGrid"></div>
+      </section>
+
+      <section class="card card-pad">
+
+        <h3 class="section-title" id="reportTitle">Danh sách sinh viên</h3>
+        <p class="hint" id="reportMeta" style="margin:-8px 0 14px;"></p>
+
+        <div class="table-wrap">
+          <table class="teacher-table">
+            <thead>
+              <tr>
+                <th style="width:36px"></th>
+                <th>MSSV</th>
+                <th>Họ tên</th>
+                <th>Lượt đăng ký</th>
+                <th>Có mặt</th>
+                <th>Vắng</th>
+                <th>Chờ điểm danh</th>
+                <th>Lần gần nhất</th>
+                <th>Tình trạng</th>
+              </tr>
+            </thead>
+            <tbody id="studentTableBody">
+              <tr><td colspan="9" class="empty-cell">Đang tải dữ liệu...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </div>
+
+  </section>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* =========================================================
+   TRANG THEO DÕI THEO LỚP
+========================================================= */
+
+const ICON_CHEVRON = `<svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.78 18.78-1.06-1.06L14.44 12 8.72 6.28l1.06-1.06 5.895 5.895c.485.485.485 1.28 0 1.77L9.78 18.78Z" fill="currentColor"/></svg>`;
+const ICON_TRASH = `<svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 5h-5v-.25A2.755 2.755 0 0 0 13.25 2h-2.5A2.755 2.755 0 0 0 8 4.75V5H3v1.5h1v12.75A2.755 2.755 0 0 0 6.75 22h10.5A2.755 2.755 0 0 0 20 19.25V6.5h1V5ZM9.5 4.75c0-.69.56-1.25 1.25-1.25h2.5c.69 0 1.25.56 1.25 1.25V5h-5v-.25Zm9 14.5c0 .69-.56 1.25-1.25 1.25H6.75c-.69 0-1.25-.56-1.25-1.25V6.5h13v12.75Z" fill="currentColor"/></svg>`;
+
+let classes = [];
+let isAdmin = false;
+let currentClass = null;
+let report = null;
+let openRows = new Set();
+
+/* ---------- Tiện ích ---------- */
+
+function escapeHtml(text) {
+  return String(text ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function normalizeKeyword(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function formatDate(iso, fallback) {
+  if (!iso) return fallback || "—";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function showMessage(text, type) {
+  const box = document.getElementById("uploadMessage");
+  box.className = `message show ${type}`;
+  box.textContent = text;
+}
+
+async function readJson(response) {
+  const type = response.headers.get("content-type") || "";
+
+  if (!type.includes("application/json")) {
+    if (response.status === 413) {
+      throw new Error("File quá lớn (tối đa 5 MB).");
+    }
+    throw new Error(`Lỗi máy chủ (HTTP ${response.status}).`);
+  }
+
+  const json = await response.json();
+
+  if (!response.ok || !json.success) {
+    throw new Error(json.error || "Có lỗi xảy ra.");
+  }
+
+  return json;
+}
+
+/* ---------- Danh sách lớp ---------- */
+
+async function loadClasses(selectAfter) {
+  const list = document.getElementById("classList");
+
+  try {
+    const json = await readJson(await fetch("/api/teacher/classes", { cache: "no-store" }));
+
+    classes = json.data || [];
+    isAdmin = Boolean(json.is_admin);
+
+    if (!classes.length) {
+      list.innerHTML = `<li class="hint">Chưa có lớp nào. Hãy tải danh sách lớp đầu tiên.</li>`;
+      return;
+    }
+
+    list.innerHTML = classes.map((item, index) => `
+      <li class="class-item ${isCurrent(item) ? "active" : ""}" onclick="selectClass(${index})">
+        <div>
+          <b>${escapeHtml(item.class_code)}</b>
+          <small>
+            ${item.student_count} sinh viên
+            ${item.group_count ? " · " + item.group_count + " nhóm" : ""}
+            ${item.subject ? " · " + escapeHtml(item.subject) : ""}
+            ${isAdmin ? "<br>" + escapeHtml(item.owner_role || "Giảng viên") + ": " + escapeHtml(item.owner_name || item.owner_email) : ""}
+          </small>
+        </div>
+        <button type="button" title="Xóa lớp" onclick="event.stopPropagation(); deleteClass(${index})">${ICON_TRASH}</button>
+      </li>
+    `).join("");
+
+    if (selectAfter) {
+      const index = classes.findIndex(item =>
+        item.class_code.toUpperCase() === selectAfter.toUpperCase()
+      );
+      if (index >= 0) selectClass(index);
+    } else if (!currentClass && classes.length === 1) {
+      selectClass(0);
+    }
+
+  } catch (error) {
+    list.innerHTML = `<li class="hint">Không tải được danh sách lớp: ${escapeHtml(error.message)}</li>`;
+  }
+}
+
+function isCurrent(item) {
+  return currentClass
+    && currentClass.class_code === item.class_code
+    && currentClass.owner_email === item.owner_email;
+}
+
+function selectClass(index) {
+  currentClass = classes[index];
+  openRows = new Set();
+
+  document.querySelectorAll(".class-item").forEach((element, i) => {
+    element.classList.toggle("active", i === index);
+  });
+
+  loadReport();
+}
+
+async function deleteClass(index) {
+  const item = classes[index];
+
+  const ok = await vluConfirm({
+    title: "Xóa danh sách lớp",
+    subtitle: "Theo dõi sinh viên theo lớp",
+    intro: "Hệ thống sẽ xóa danh sách lớp sau:",
+    rows: [
+      ["Mã lớp", item.class_code],
+      ["Sĩ số", `${item.student_count} sinh viên`],
+      ["Số nhóm", item.group_count ? `${item.group_count} nhóm` : ""],
+      [item.owner_role === "Giảng viên" ? "Giảng viên" : "Người tải", item.owner_name || item.owner_email],
+      ["Cập nhật", item.uploaded_at]
+    ],
+    note: "Chỉ xóa danh sách lớp đã tải lên. Dữ liệu đăng ký, điểm danh và bàn giao phòng Lab không bị ảnh hưởng; có thể tải lại danh sách bất cứ lúc nào.",
+    tone: "danger",
+    okText: "Xóa danh sách",
+    cancelText: "Giữ lại"
+  });
+
+  if (!ok) return;
+
+  try {
+    await readJson(await fetch("/api/teacher/classes", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ class_code: item.class_code, owner_email: item.owner_email })
+    }));
+
+    if (isCurrent(item)) {
+      currentClass = null;
+      report = null;
+      document.getElementById("reportContent").hidden = true;
+      document.getElementById("noClass").hidden = false;
+    }
+
+    loadClasses();
+
+    vluAlert({
+      title: "Đã xóa danh sách lớp",
+      subtitle: "Theo dõi sinh viên theo lớp",
+      intro: `Danh sách lớp ${item.class_code} (${item.student_count} sinh viên) đã được xóa.`,
+      tone: "success"
+    });
+
+  } catch (error) {
+    vluAlert({ title: "Không xóa được danh sách lớp", intro: error.message, tone: "danger" });
+  }
+}
+
+/* ---------- Báo cáo lớp ---------- */
+
+async function loadReport() {
+  if (!currentClass) return;
+
+  document.getElementById("noClass").hidden = true;
+  document.getElementById("reportContent").hidden = false;
+  document.getElementById("studentTableBody").innerHTML =
+    `<tr><td colspan="9" class="empty-cell">Đang đối chiếu dữ liệu phòng Lab...</td></tr>`;
+
+  const params = new URLSearchParams({
+    class_code: currentClass.class_code,
+    owner_email: currentClass.owner_email
+  });
+
+  try {
+    report = await readJson(await fetch(`/api/teacher/class-report?${params}`, { cache: "no-store" }));
+
+    document.getElementById("reportTitle").textContent =
+      `${classLabel(report.class_code)}${report.subject ? " – " + report.subject : ""}`;
+
+    fillGroupFilter();
+
+    document.getElementById("reportMeta").textContent =
+      `${report.owner_role === "Giảng viên" ? "Giảng viên" : "Người tải danh sách"}: ${report.owner_name || "—"}${report.owner_role && report.owner_role !== "Giảng viên" ? " (" + report.owner_role + ")" : ""} · Cập nhật danh sách: ${report.uploaded_at || "—"}`;
+
+    renderReport();
+
+  } catch (error) {
+    document.getElementById("studentTableBody").innerHTML =
+      `<tr><td colspan="9" class="empty-cell">Không thể tải báo cáo: ${escapeHtml(error.message)}</td></tr>`;
+  }
+}
+
+/* ---------- Nhóm ---------- */
+
+const NO_GROUP = "Chưa phân nhóm";
+
+function classLabel(code) {
+  return normalizeKeyword(code).startsWith("lop") ? code : `Lớp ${code}`;
+}
+
+function groupOf(student) {
+  return student.group || NO_GROUP;
+}
+
+function compareGroups(a, b) {
+  if (a === NO_GROUP) return 1;
+  if (b === NO_GROUP) return -1;
+  return a.localeCompare(b, "vi", { numeric: true, sensitivity: "base" });
+}
+
+function hasGroups() {
+  return (report?.students || []).some(student => student.group);
+}
+
+// Danh sách nhóm của lớp: tên, đề tài, sinh viên
+function buildGroups(students) {
+  const map = new Map();
+
+  students.forEach(student => {
+    const name = groupOf(student);
+
+    if (!map.has(name)) {
+      map.set(name, { name, topic: "", students: [] });
+    }
+
+    const group = map.get(name);
+    group.students.push(student);
+    if (!group.topic && student.topic) group.topic = student.topic;
+  });
+
+  return [...map.values()].sort((a, b) => compareGroups(a.name, b.name));
+}
+
+function fillGroupFilter() {
+  const select = document.getElementById("groupFilter");
+  const field = document.getElementById("groupField");
+  const section = document.getElementById("groupSection");
+  const grouped = hasGroups();
+
+  field.hidden = !grouped;
+  section.hidden = !grouped;
+  document.querySelector(".teacher-filter").classList.toggle("with-group", grouped);
+
+  select.innerHTML = `<option value="">Tất cả nhóm</option>` +
+    (grouped
+      ? buildGroups(report.students).map(group =>
+          `<option value="${escapeHtml(group.name)}">${escapeHtml(group.name)}${group.topic ? " – " + escapeHtml(group.topic) : ""}</option>`
+        ).join("")
+      : "");
+}
+
+function selectGroup(name, fromCard) {
+  const select = document.getElementById("groupFilter");
+
+  // Bấm lại nhóm đang chọn -> bỏ chọn
+  if (fromCard && select.value === name) name = "";
+
+  select.value = name;
+  renderReport();
+
+  if (name) {
+    document.getElementById("reportTitle").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function renderGroups() {
+  const grid = document.getElementById("groupGrid");
+  if (!grid || !hasGroups()) return;
+
+  const selected = document.getElementById("groupFilter").value;
+  document.getElementById("groupAllButton").hidden = !selected;
+
+  grid.innerHTML = buildGroups(report.students).map(group => {
+    const summaries = group.students.map(student => summarize(student));
+    const size = group.students.length;
+    const visited = summaries.filter(s => s.present > 0).length;
+    const registered = summaries.filter(s => s.sessions.length > 0).length;
+    const present = summaries.reduce((sum, s) => sum + s.present, 0);
+    const absent = summaries.reduce((sum, s) => sum + s.absent, 0);
+    const pending = summaries.reduce((sum, s) => sum + s.pending, 0);
+    const percent = size ? Math.round((visited / size) * 100) : 0;
+
+    return `
+      <button type="button"
+        class="group-card ${selected === group.name ? "active" : ""}"
+        data-group="${escapeHtml(group.name)}"
+        onclick="selectGroup(this.dataset.group, true)">
+        <div class="group-card-head">
+          <b>${escapeHtml(group.name)}</b>
+          <span>${size} SV</span>
+        </div>
+        <p class="group-topic">${group.topic ? escapeHtml(group.topic) : "<i>Chưa có đề tài</i>"}</p>
+        <div class="group-meter"><i style="width:${percent}%"></i></div>
+        <div class="group-progress"><b>${visited}/${size}</b> SV đã đến Lab · ${registered} SV có đăng ký</div>
+        <div class="group-chips">
+          <span class="count-chip chip-green" title="Lượt có mặt">${present}</span> có mặt
+          <span class="count-chip ${absent ? "chip-red" : "chip-gray"}" title="Lượt vắng">${absent}</span> vắng
+          <span class="count-chip chip-gray" title="Lượt chờ điểm danh">${pending}</span> chờ
+        </div>
+      </button>
+    `;
+  }).join("");
+}
+
+function sessionsInRange(student) {
+  const from = document.getElementById("dateFrom").value;
+  const to = document.getElementById("dateTo").value;
+
+  return student.sessions.filter(session =>
+    (!from || (session.date_iso && session.date_iso >= from)) &&
+    (!to || (session.date_iso && session.date_iso <= to))
+  );
+}
+
+function summarize(student) {
+  const sessions = sessionsInRange(student);
+  const present = sessions.filter(s => s.attendance_status === "Có mặt").length;
+  const absent = sessions.filter(s => s.attendance_status === "Vắng").length;
+  const pending = sessions.length - present - absent;
+  const last = sessions.length ? sessions[sessions.length - 1] : null;
+
+  let state = "none";
+  if (present) state = "present";
+  else if (absent) state = "absent";
+  else if (pending) state = "pending";
+
+  return { sessions, present, absent, pending, last, state };
+}
+
+const STATE_PILL = {
+  present: `<span class="pill pill-green">Đã đến Lab</span>`,
+  absent: `<span class="pill pill-red">Vắng</span>`,
+  pending: `<span class="pill pill-amber">Chờ điểm danh</span>`,
+  none: `<span class="pill pill-gray">Chưa đăng ký</span>`
+};
+
+function statusPill(status) {
+  if (status === "Có mặt") return `<span class="pill pill-green">Có mặt</span>`;
+  if (status === "Vắng") return `<span class="pill pill-red">Vắng</span>`;
+  return `<span class="pill pill-amber">Chưa điểm danh</span>`;
+}
+
+function filteredStudents() {
+  const keyword = normalizeKeyword(document.getElementById("studentSearch").value);
+  const filter = document.getElementById("studentFilter").value;
+  const groupFilter = document.getElementById("groupFilter").value;
+
+  return (report?.students || [])
+    .map(student => ({ ...student, summary: summarize(student) }))
+    .filter(student => {
+      const matchKeyword = !keyword ||
+        normalizeKeyword(`${student.student_id} ${student.name} ${student.group || ""} ${student.topic || ""}`).includes(keyword);
+
+      const matchGroup = !groupFilter || groupOf(student) === groupFilter;
+
+      let matchFilter = true;
+      if (filter === "present") matchFilter = student.summary.present > 0;
+      if (filter === "absent") matchFilter = student.summary.absent > 0;
+      if (filter === "pending") matchFilter = student.summary.pending > 0;
+      if (filter === "none") matchFilter = student.summary.sessions.length === 0;
+
+      return matchKeyword && matchFilter && matchGroup;
+    });
+}
+
+function renderReport() {
+  if (!report) return;
+
+  // Thống kê tính trên cả lớp (theo khoảng ngày đang chọn)
+  const all = report.students.map(student => summarize(student));
+
+  document.getElementById("statClassSize").textContent = report.students.length;
+  document.getElementById("statRegistered").textContent = all.filter(s => s.sessions.length).length;
+  document.getElementById("statPresent").textContent = all.reduce((sum, s) => sum + s.present, 0);
+  document.getElementById("statAbsent").textContent = all.reduce((sum, s) => sum + s.absent, 0);
+
+  renderGroups();
+
+  const students = filteredStudents();
+  const tbody = document.getElementById("studentTableBody");
+
+  if (!students.length) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-cell">Không có sinh viên phù hợp với bộ lọc</td></tr>`;
+    return;
+  }
+
+  const renderStudent = student => {
+    const s = student.summary;
+    const isOpen = openRows.has(student.student_id);
+    const hasSessions = s.sessions.length > 0;
+
+    const row = `
+      <tr class="student-row ${isOpen ? "open" : ""}" onclick="toggleRow('${escapeHtml(student.student_id)}')">
+        <td>${hasSessions ? `<span class="toggle-icon">${ICON_CHEVRON}</span>` : ""}</td>
+        <td>${escapeHtml(student.student_id)}</td>
+        <td><b>${escapeHtml(student.name || "—")}</b></td>
+        <td><span class="count-chip chip-dark">${s.sessions.length}</span></td>
+        <td><span class="count-chip ${s.present ? "chip-green" : "chip-gray"}">${s.present}</span></td>
+        <td><span class="count-chip ${s.absent ? "chip-red" : "chip-gray"}">${s.absent}</span></td>
+        <td><span class="count-chip chip-gray">${s.pending}</span></td>
+        <td>${s.last ? `${formatDate(s.last.date_iso, s.last.date)} · ${escapeHtml(s.last.shift)}` : "—"}</td>
+        <td>${STATE_PILL[s.state]}</td>
+      </tr>
+    `;
+
+    const detail = isOpen && hasSessions ? `
+      <tr class="detail-row">
+        <td colspan="9">
+          <ul class="session-list">
+            ${s.sessions.map(session => `
+              <li>
+                <b>${formatDate(session.date_iso, session.date)}</b>
+                <span>${escapeHtml(session.shift)}</span>
+                <span>${escapeHtml(session.lab)}</span>
+                <span>${escapeHtml(session.booking_id)} · ${escapeHtml(session.role)}</span>
+                ${statusPill(session.attendance_status)}
+              </li>
+            `).join("")}
+          </ul>
+        </td>
+      </tr>
+    ` : "";
+
+    return row + detail;
+  };
+
+  if (!hasGroups()) {
+    tbody.innerHTML = students.map(renderStudent).join("");
+    return;
+  }
+
+  // Có nhóm: mỗi nhóm một dòng tiêu đề, sinh viên trong nhóm ở dưới
+  tbody.innerHTML = buildGroups(students).map(group => {
+    const visited = group.students.filter(student => student.summary.present > 0).length;
+
+    return `
+      <tr class="group-row">
+        <td colspan="9">
+          <div>
+            <b>${escapeHtml(group.name)}</b>
+            ${group.topic ? `<span>${escapeHtml(group.topic)}</span>` : ""}
+            <small>${group.students.length} SV · ${visited} đã đến Lab</small>
+          </div>
+        </td>
+      </tr>
+    ` + group.students.map(renderStudent).join("");
+  }).join("");
+}
+
+function toggleRow(studentId) {
+  if (openRows.has(studentId)) openRows.delete(studentId);
+  else openRows.add(studentId);
+  renderReport();
+}
+
+/* ---------- Tải file ---------- */
+
+const fileInput = document.getElementById("rosterFile");
+const dropzone = document.getElementById("dropzone");
+
+fileInput.addEventListener("change", () => {
+  document.getElementById("fileName").textContent = fileInput.files[0]?.name || "";
+});
+
+["dragenter", "dragover"].forEach(type =>
+  dropzone.addEventListener(type, event => {
+    event.preventDefault();
+    dropzone.classList.add("drag");
+  })
+);
+
+["dragleave", "drop"].forEach(type =>
+  dropzone.addEventListener(type, event => {
+    event.preventDefault();
+    dropzone.classList.remove("drag");
+  })
+);
+
+dropzone.addEventListener("drop", event => {
+  if (event.dataTransfer.files.length) {
+    fileInput.files = event.dataTransfer.files;
+    fileInput.dispatchEvent(new Event("change"));
+  }
+});
+
+document.getElementById("uploadForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  if (!fileInput.files.length) {
+    showMessage("Vui lòng chọn file danh sách lớp.", "error");
+    return;
+  }
+
+  const button = document.getElementById("uploadButton");
+  button.disabled = true;
+  showMessage("Đang tải lên và lưu danh sách...", "success");
+
+  try {
+    const json = await readJson(await fetch("/api/teacher/upload", {
+      method: "POST",
+      body: new FormData(event.target)
+    }));
+
+    showMessage(json.message, "success");
+    event.target.reset();
+    document.getElementById("fileName").textContent = "";
+
+    currentClass = null;
+    await loadClasses(json.classes[0]);
+
+  } catch (error) {
+    showMessage(error.message, "error");
+  } finally {
+    button.disabled = false;
+  }
+});
+
+/* ---------- Xuất Excel ---------- */
+
+async function exportClassReport() {
+  if (!report || !currentClass) return;
+
+  // File Excel 4 sheet (Tổng hợp / Điểm danh / Bàn giao / Chi tiết lượt) do máy chủ tạo,
+  // theo khoảng ngày và nhóm đang chọn trên trang
+  const params = new URLSearchParams({
+    class_code: currentClass.class_code,
+    owner_email: currentClass.owner_email,
+    date_from: document.getElementById("dateFrom").value,
+    date_to: document.getElementById("dateTo").value,
+    group: document.getElementById("groupFilter").value
+  });
+
+  const button = document.getElementById("exportButton");
+  const label = button.innerHTML;
+  button.disabled = true;
+  button.innerHTML = "Đang tạo file...";
+
+  try {
+    const response = await fetch(`/api/teacher/export?${params}`, { cache: "no-store" });
+    const type = response.headers.get("content-type") || "";
+
+    if (!response.ok || type.includes("application/json")) {
+      await readJson(response);
+      throw new Error(`Lỗi máy chủ (HTTP ${response.status}).`);
+    }
+
+    const disposition = response.headers.get("content-disposition") || "";
+    const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+    const fileName = match ? decodeURIComponent(match[1]) : "bao_cao_lop.xlsx";
+
+    const blob = await response.blob();
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+
+  } catch (error) {
+    vluAlert({ title: "Không xuất được file Excel", intro: error.message, tone: "danger" });
+  } finally {
+    button.disabled = false;
+    button.innerHTML = label;
+  }
+}
+
+/* ---------- Chuông thông báo (kỹ thuật viên) ---------- */
+// Giảng viên không có chuông: hàm gốc tự bỏ qua khi không thấy #notificationCount
+async function loadSystemNotifications() {
+  const countEl = document.getElementById("notificationCount");
+  const listEl = document.getElementById("notificationList");
+  const statusEl = document.getElementById("notificationStatus");
+
+  if (!countEl || !listEl) return;
+
+  try {
+    const res = await fetch("/api/notifications");
+    const json = await res.json();
+
+    if (!json.success) {
+      countEl.innerText = "0";
+
+      listEl.innerHTML = `
+        <p class="notification-empty">
+          Không thể tải thông báo
+        </p>
+      `;
+
+      if (statusEl) {
+        statusEl.innerText = "Lỗi";
+      }
+
+      return;
+    }
+
+    const data = json.data || [];
+
+    countEl.innerText = json.count || 0;
+
+    if (statusEl) {
+      statusEl.innerText = `${json.count || 0} thông báo`;
+    }
+
+    if (!data.length) {
+      listEl.innerHTML = `
+        <p class="notification-empty">
+          Chưa có thông báo mới
+        </p>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = data.map(item => {
+      const levelClass = getNotificationLevelClass(item.level);
+
+      return `
+        <div class="notification-item ${levelClass}">
+          <b>${escapeHtml(item.title || "Thông báo")}</b>
+          <p>${escapeHtml(item.message || "")}</p>
+          <small>${escapeHtml(item.id_key || "")}</small>
+        </div>
+      `;
+    }).join("");
+
+  } catch (error) {
+    console.error("LOAD NOTIFICATIONS ERROR:", error);
+
+    countEl.innerText = "0";
+
+    listEl.innerHTML = `
+      <p class="notification-empty">
+        Lỗi kết nối thông báo
+      </p>
+    `;
+
+    if (statusEl) {
+      statusEl.innerText = "Lỗi";
+    }
+  }
+}
+
+function toggleNotificationPanel(event) {
+  if (event) {
+    event.stopPropagation();
+  }
+
+  const panel = document.getElementById("notificationPanel");
+
+  if (panel) {
+    panel.classList.toggle("show");
+  }
+}
+
+function getNotificationLevelClass(level) {
+  if (level === "danger") return "notification-danger";
+  if (level === "warning") return "notification-warning";
+  return "notification-info";
+}
+
+document.addEventListener("click", function (event) {
+  const wrapper = document.querySelector(".bell-wrapper");
+  const panel = document.getElementById("notificationPanel");
+
+  if (!wrapper || !panel) return;
+
+  if (!wrapper.contains(event.target)) {
+    panel.classList.remove("show");
+  }
+});
+
+loadSystemNotifications();
+setInterval(loadSystemNotifications, 60000);
+
+
+/* ---------- Khởi tạo ---------- */
+
+["studentSearch"].forEach(id =>
+  document.getElementById(id).addEventListener("input", renderReport)
+);
+
+["dateFrom", "dateTo", "studentFilter", "groupFilter"].forEach(id =>
+  document.getElementById(id).addEventListener("change", renderReport)
+);
+
+loadClasses();
+</script>
+{% endblock %}

@@ -1,0 +1,289 @@
+/* =========================================================
+   ĐĂNG NHẬP - PHONG CÁCH VLU
+   Trái: ảnh campus + lớp phủ tối; Phải: form trắng
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --vlu-red: #d72134;
+  --vlu-red-dark: #b5182a;
+  --ink: #1d1d1f;
+  --muted: #6e6e76;
+  --line: #e4e4e8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #ffffff;
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', Arial, sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.gi {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+
+/* Nền ảnh campus toàn màn hình, khối đăng nhập nhỏ màu trắng nổi bên phải */
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  align-items: center;
+  gap: 48px;
+  padding: 48px clamp(24px, 6vw, 96px);
+  background:
+    linear-gradient(115deg, rgba(20, 20, 22, 0.9) 0%, rgba(20, 20, 22, 0.66) 50%, rgba(215, 33, 52, 0.55) 100%),
+    url("/static/images/background.jpg.avif") center / cover no-repeat;
+  color: #ffffff;
+}
+
+/* =========================================================
+   GIỚI THIỆU
+========================================================= */
+
+.login-intro {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+  min-height: calc(100vh - 96px);
+}
+
+.intro-logo {
+  width: 210px;
+}
+
+.intro-kicker {
+  display: inline-block;
+  margin-bottom: 16px;
+  padding: 6px 12px;
+  border-left: 3px solid var(--vlu-red);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.login-intro h1 {
+  margin: 0;
+  font-size: clamp(34px, 4vw, 58px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.5px;
+  text-transform: uppercase;
+}
+
+.login-intro h1::after {
+  content: "";
+  display: block;
+  width: 64px;
+  height: 4px;
+  margin-top: 20px;
+  background: var(--vlu-red);
+}
+
+.login-intro p {
+  max-width: 520px;
+  margin: 20px 0 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.intro-foot {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+}
+
+/* =========================================================
+   KHỐI ĐĂNG NHẬP
+========================================================= */
+
+.login-card {
+  width: 100%;
+  padding: 36px 36px 30px;
+  border-top: 4px solid var(--vlu-red);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+}
+
+.card-logo {
+  width: 170px;
+  margin-bottom: 26px;
+}
+
+.login-card h2 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.login-card h2::after {
+  content: "";
+  display: block;
+  width: 40px;
+  height: 4px;
+  margin-top: 10px;
+  background: var(--vlu-red);
+}
+
+.login-desc {
+  margin: 14px 0 24px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.field {
+  display: block;
+  margin-bottom: 16px;
+}
+
+.field > span {
+  display: block;
+  margin-bottom: 7px;
+  color: #3a3a3f;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.input-box {
+  height: 48px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #d6d6dc;
+  border-radius: 8px;
+  color: var(--muted);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.input-box:focus-within {
+  border-color: var(--vlu-red);
+  box-shadow: 0 0 0 3px rgba(215, 33, 52, 0.14);
+  color: var(--vlu-red);
+}
+
+.input-box input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.error-message {
+  margin-bottom: 14px;
+  padding: 11px 13px;
+  border: 1px solid #f2b3bb;
+  border-radius: 8px;
+  background: #fdeef0;
+  color: #c41d30;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.btn-login {
+  width: 100%;
+  height: 50px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--vlu-red);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.btn-login:hover {
+  background: var(--vlu-red-dark);
+}
+
+.login-note {
+  margin: 18px 0 0;
+  padding-top: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.login-note .gi {
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 960px) {
+  .login-page {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 28px 20px 40px;
+    align-content: start;
+  }
+
+  .login-intro {
+    min-height: 0;
+    gap: 22px;
+  }
+
+  .login-intro p,
+  .intro-foot {
+    display: none;
+  }
+
+  .intro-logo {
+    width: 160px;
+  }
+
+  .login-intro h1 {
+    font-size: 30px;
+  }
+
+  .login-card {
+    max-width: 440px;
+    padding: 28px 22px 24px;
+  }
+
+  .card-logo {
+    display: none;
+  }
+}

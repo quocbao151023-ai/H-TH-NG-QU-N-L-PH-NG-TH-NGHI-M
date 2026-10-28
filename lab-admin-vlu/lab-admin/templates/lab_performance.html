@@ -1,0 +1,1766 @@
+{% extends "base.html" %}
+{% set active_page = "performance" %}
+{% set page_title = "Hiệu suất phòng Lab" %}
+{% set page_desc = "Tỷ lệ sử dụng, bàn giao, nhu cầu hỗ trợ kỹ thuật và khung giờ cao điểm của từng phòng Lab." %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='pages.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- BỘ LỌC -->
+<section class="card filter-bar performance-filter">
+
+  <div class="field date-field">
+    <label>Khoảng thời gian</label>
+    <div class="date-range-box">
+      <input type="date" id="filterDateFrom">
+      <span>–</span>
+      <input type="date" id="filterDateTo">
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="filterLab">Phòng Lab</label>
+    <select id="filterLab">
+      <option value="">Tất cả Lab</option>
+      <option value="Lab 1">Lab 1</option>
+      <option value="Lab 2">Lab 2</option>
+      <option value="Lab 3">Lab 3</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="filterShift">Ca</label>
+    <select id="filterShift">
+      <option value="">Tất cả ca</option>
+      <option value="Ca 1">Ca 1</option>
+      <option value="Ca 2">Ca 2</option>
+      <option value="Ca 3">Ca 3</option>
+      <option value="Ca 4">Ca 4</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="filterPurpose">Mục đích sử dụng</label>
+    <select id="filterPurpose">
+      <option value="">Tất cả mục đích</option>
+      <option value="Phục vụ học tập">Phục vụ học tập</option>
+      <option value="Làm việc nhóm">Làm việc nhóm</option>
+      <option value="Nghiên cứu khoa học">Nghiên cứu khoa học</option>
+      <option value="Thực hiện đồ án">Thực hiện đồ án</option>
+      <option value="Chuẩn bị seminar / báo cáo">Chuẩn bị seminar / báo cáo</option>
+      <option value="Thực hành ngoài giờ">Thực hành ngoài giờ</option>
+      <option value="Khác">Khác</option>
+    </select>
+  </div>
+
+  <button class="performance-export-btn" type="button" onclick="exportPerformanceCSV()">
+    <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.885 16.675a1.245 1.245 0 0 1-.885.365c-.32 0-.64-.12-.885-.365L6.47 12.03l1.06-1.06 3.72 3.72V3h1.5v11.69l3.72-3.72 1.06 1.06-4.645 4.645ZM19.5 18.25V15.5H21v2.75A2.755 2.755 0 0 1 18.25 21H5.75A2.755 2.755 0 0 1 3 18.25V15.5h1.5v2.75c0 .69.56 1.25 1.25 1.25h12.5c.69 0 1.25-.56 1.25-1.25Z" fill="currentColor"/></svg> Xuất báo cáo
+  </button>
+
+</section>
+
+<!-- THỐNG KÊ -->
+<section class="stat-grid">
+
+  <div class="stat-card tone-dark">
+    <div class="stat-top">
+      <p class="stat-label">Tổng lượt đăng ký</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M17 2v1.5h3V22H4V3.5h3V2h10Zm-1.5 1.5h-7v.75c0 .69.56 1.25 1.25 1.25h4.5c.69 0 1.25-.56 1.25-1.25V3.5Zm-10 17h13V5h-1.605c-.33 1.15-1.39 2-2.645 2h-4.5c-1.26 0-2.315-.85-2.645-2H5.5v15.5Zm2.5-5h1.5v3H8v-3Zm4.75-5h-1.5v8h1.5v-8Zm1.75 3H16v5h-1.5v-5Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statTotalBookings">0</h3>
+    <div class="stat-foot" id="perfNoteTotal">&nbsp;</div>
+  </div>
+
+  <div class="stat-card tone-red">
+    <div class="stat-top">
+      <p class="stat-label">Tỷ lệ sử dụng TB</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.75 7.5H15.5V4.25c0-.69-.56-1.25-1.25-1.25h-4.5c-.69 0-1.25.56-1.25 1.25v8.25H4.25c-.69 0-1.25.56-1.25 1.25V21h18V8.75c0-.69-.56-1.25-1.25-1.25ZM8.5 19.5h-4V14h4v5.5Zm5.5 0h-4v-15h4v15Zm5.5 0h-4V9h4v10.5Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statUsageRate">0%</h3>
+    <div class="stat-foot" id="perfNoteUsage">&nbsp;</div>
+  </div>
+
+  <div class="stat-card tone-green">
+    <div class="stat-top">
+      <p class="stat-label">Tỷ lệ bàn giao</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M17 2v1.5h3V22H4V3.5h3V2h10Zm-1.5 1.5h-7v.75c0 .69.56 1.25 1.25 1.25h4.5c.69 0 1.25-.56 1.25-1.25V3.5Zm-10 17h13V5h-1.605c-.33 1.15-1.39 2-2.645 2h-4.5c-1.26 0-2.315-.85-2.645-2H5.5v15.5Zm3.78-7.28 1.47 1.47 3.97-3.97 1.06 1.06-4.145 4.145a1.245 1.245 0 0 1-.885.365c-.32 0-.64-.12-.885-.365L8.22 14.28l1.06-1.06Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statHandoverRate">0%</h3>
+    <div class="stat-foot" id="perfNoteHandover">&nbsp;</div>
+  </div>
+
+  <div class="stat-card tone-amber">
+    <div class="stat-top">
+      <p class="stat-label">Cần hỗ trợ kỹ thuật</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m20.15 21.09-2.73-.35a2.752 2.752 0 0 1-2.375-3.08l.385-2.975a2.737 2.737 0 0 1 1.045-1.825 2.72 2.72 0 0 1 2.03-.55l1.24.16.02-.145c.285-2.23-.4-4.48-1.885-6.165a7.816 7.816 0 0 0-5.875-2.655c-2.25 0-4.39.97-5.875 2.655a7.815 7.815 0 0 0-1.885 6.165l.02.145 1.24-.16c.73-.095 1.45.1 2.03.55.58.45.955 1.1 1.045 1.825l.38 2.975a2.755 2.755 0 0 1-2.375 3.08l-2.73.35-1.1-8.575a9.34 9.34 0 0 1 2.25-7.35A9.34 9.34 0 0 1 12.01 2c2.68 0 5.23 1.155 7.005 3.165a9.334 9.334 0 0 1 2.25 7.35l-1.1 8.575h-.015Zm-1.995-7.305c-.275 0-.54.09-.76.26-.265.205-.435.5-.475.83l-.385 2.975a1.253 1.253 0 0 0 1.08 1.4l1.24.16.7-5.455-1.24-.16a1.83 1.83 0 0 0-.16-.01Zm-13.705.17.7 5.455 1.24-.16a1.25 1.25 0 0 0 1.08-1.4l-.385-2.975a1.252 1.252 0 0 0-1.4-1.08l-1.24.16h.005Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statSupportCount">0</h3>
+    <div class="stat-foot" data-share-of="statTotalBookings" data-share-text="lượt đăng ký">&nbsp;</div>
+  </div>
+
+</section>
+
+<!-- BIỂU ĐỒ: HÀNG 1 - XU HƯỚNG (RỘNG) -->
+<section class="chart-row">
+
+  <div class="card chart-card trend-card">
+    <div class="chart-head">
+      <div>
+        <h3 class="chart-title">Xu hướng sử dụng</h3>
+        <p class="chart-sub">Tỷ lệ ca được sử dụng theo từng ngày có lịch đăng ký</p>
+      </div>
+
+      <div class="chart-meta" id="trendMeta"></div>
+    </div>
+
+    <div class="chart-legend-inline">
+      <span><i class="lg-bar"></i>Theo ngày</span>
+      <span><i class="lg-line"></i>Trung bình 7 ngày gần nhất</span>
+    </div>
+
+    <div class="chart-box chart-box-lg">
+      <canvas id="usageTrendChart"></canvas>
+    </div>
+  </div>
+
+</section>
+
+<!-- BIỂU ĐỒ: HÀNG 2 - BA KHỐI BẰNG NHAU -->
+<section class="chart-row chart-row-3">
+
+  <div class="card chart-card">
+    <div class="chart-head">
+      <div>
+        <h3 class="chart-title">Theo phòng Lab</h3>
+        <p class="chart-sub">Số ca đã dùng / tổng ca khả dụng</p>
+      </div>
+    </div>
+
+    <div class="chart-box">
+      <canvas id="labUsageChart"></canvas>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <div class="chart-head">
+      <div>
+        <h3 class="chart-title">Mục đích sử dụng</h3>
+        <p class="chart-sub">Cơ cấu lượt đăng ký theo mục đích</p>
+      </div>
+    </div>
+
+    <div class="donut-layout">
+      <div class="donut-box">
+        <canvas id="purposeChart"></canvas>
+        <div class="donut-center">
+          <b id="purposeTotal">0</b>
+          <span>lượt</span>
+        </div>
+      </div>
+
+      <ul class="donut-legend" id="purposeLegend"></ul>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <div class="chart-head">
+      <div>
+        <h3 class="chart-title">Khung giờ cao điểm</h3>
+        <p class="chart-sub" id="heatmapMeta">Số lượt đăng ký theo ca và thứ</p>
+      </div>
+    </div>
+
+    <div class="heatmap-wrap">
+      <div class="heatmap-days">
+        <span></span><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span>
+      </div>
+
+      <div id="heatmapBody" class="heatmap-body"></div>
+    </div>
+
+    <div class="heatmap-legend">
+      <span>Thấp</span>
+      <div class="legend-steps"><i class="level-1"></i><i class="level-2"></i><i class="level-3"></i><i class="level-4"></i><i class="level-5"></i></div>
+      <span>Cao</span>
+    </div>
+  </div>
+
+</section>
+
+<!-- BẢNG -->
+<section class="card card-pad">
+
+  <h3 class="section-title">Tổng hợp theo phòng Lab</h3>
+
+  <div class="table-wrap">
+    <table class="performance-table">
+      <thead>
+        <tr>
+          <th>Phòng Lab</th>
+          <th>Lượt đăng ký</th>
+          <th>Lượt bàn giao</th>
+          <th>Tỷ lệ bàn giao</th>
+          <th>Cần hỗ trợ KT</th>
+          <th>Bất thường</th>
+          <th>Tỷ lệ sử dụng</th>
+          <th>Đánh giá</th>
+        </tr>
+      </thead>
+
+      <tbody id="performanceTableBody">
+        <tr>
+          <td colspan="8" class="performance-empty">Đang tải dữ liệu...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+/* Màu và font biểu đồ đồng bộ với Booking */
+Chart.defaults.font.family = "'IBM Plex Sans', Arial, sans-serif";
+Chart.defaults.font.size = 12;
+Chart.defaults.color = "#6e6e76";
+Chart.defaults.borderColor = "#efeff2";
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.tooltip.backgroundColor = "#141416";
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.plugins.tooltip.cornerRadius = 8;
+
+const LAB_COLORS = { "Lab 1": "#1f6feb", "Lab 2": "#19a44a", "Lab 3": "#d29a12" };
+const PURPOSE_COLORS = {
+  "Phục vụ học tập": "#1d1d1f",
+  "Nghiên cứu khoa học": "#d72134",
+  "Làm việc nhóm": "#1f6feb",
+  "Khác": "#d29a12"
+};
+</script>
+
+<script>
+/* =========================
+   USER MENU
+========================= */
+
+function toggleUserMenu() {
+  const panel = document.getElementById("userPanel");
+
+  if (panel) {
+    panel.classList.toggle("show");
+  }
+}
+
+
+/* =========================
+   NOTIFICATION
+========================= */
+
+async function loadSystemNotifications() {
+  const countEl = document.getElementById("notificationCount");
+  const listEl = document.getElementById("notificationList");
+  const statusEl = document.getElementById("notificationStatus");
+
+  if (!countEl || !listEl) return;
+
+  try {
+    const res = await fetch("/api/notifications");
+    const json = await res.json();
+
+    if (!json.success) {
+      countEl.innerText = "0";
+
+      listEl.innerHTML = `
+        <p class="notification-empty">
+          Không thể tải thông báo
+        </p>
+      `;
+
+      if (statusEl) {
+        statusEl.innerText = "Lỗi";
+      }
+
+      return;
+    }
+
+    const data = json.data || [];
+
+    countEl.innerText = json.count || 0;
+
+    if (statusEl) {
+      statusEl.innerText = `${json.count || 0} thông báo`;
+    }
+
+    if (!data.length) {
+      listEl.innerHTML = `
+        <p class="notification-empty">
+          Chưa có thông báo mới
+        </p>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = data.map(item => {
+      const levelClass = getNotificationLevelClass(item.level);
+
+      return `
+        <div class="notification-item ${levelClass}">
+          <b>${escapeHtml(item.title || "Thông báo")}</b>
+          <p>${escapeHtml(item.message || "")}</p>
+          <small>${escapeHtml(item.id_key || "")}</small>
+        </div>
+      `;
+    }).join("");
+
+  } catch (error) {
+    console.error("LOAD NOTIFICATIONS ERROR:", error);
+
+    countEl.innerText = "0";
+
+    listEl.innerHTML = `
+      <p class="notification-empty">
+        Lỗi kết nối thông báo
+      </p>
+    `;
+
+    if (statusEl) {
+      statusEl.innerText = "Lỗi";
+    }
+  }
+}
+
+function toggleNotificationPanel(event) {
+  if (event) {
+    event.stopPropagation();
+  }
+
+  const panel = document.getElementById("notificationPanel");
+
+  if (panel) {
+    panel.classList.toggle("show");
+  }
+}
+
+function getNotificationLevelClass(level) {
+  if (level === "danger") return "notification-danger";
+  if (level === "warning") return "notification-warning";
+  return "notification-info";
+}
+
+document.addEventListener("click", function (event) {
+  const wrapper = document.querySelector(".bell-wrapper");
+  const panel = document.getElementById("notificationPanel");
+
+  if (!wrapper || !panel) return;
+
+  if (!wrapper.contains(event.target)) {
+    panel.classList.remove("show");
+  }
+});
+
+/* =========================
+   GLOBAL DATA
+========================= */
+
+let performanceData = [];
+let filteredPerformanceData = [];
+
+let usageTrendChart = null;
+let labUsageChart = null;
+let purposeChart = null;
+
+const MAX_GROUPS_PER_SHIFT_PER_LAB = 9;
+const ALL_LABS = ["Lab 1", "Lab 2", "Lab 3"];
+const ALL_SHIFTS = ["Ca 1", "Ca 2", "Ca 3", "Ca 4"];
+const WEEK_DAYS = ["T2", "T3", "T4", "T5", "T6", "T7"];
+
+/* =========================
+   LOAD DATA
+========================= */
+
+async function loadLabPerformance() {
+  const tbody = document.getElementById("performanceTableBody");
+
+  try {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="performance-empty">
+          Đang tải dữ liệu...
+        </td>
+      </tr>
+    `;
+
+    const res = await fetch("/api/lab-performance");
+    const json = await res.json();
+
+    if (!json.success) {
+      console.error("API ERROR:", json.error);
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="performance-empty">
+            Không thể tải dữ liệu hiệu suất phòng lab: ${escapeHtml(json.error || "")}
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    performanceData = normalizePerformanceData(json.data || []);
+
+    console.log("PERFORMANCE DATA:", performanceData);
+
+    setDefaultDateRange();
+    applyPerformanceFilter();
+
+  } catch (error) {
+    console.error("LOAD LAB PERFORMANCE ERROR:", error);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="performance-empty">
+          Lỗi tải dữ liệu hiệu suất phòng lab. Vui lòng kiểm tra API /api/lab-performance.
+        </td>
+      </tr>
+    `;
+  }
+}
+
+/* =========================
+   NORMALIZE DATA
+========================= */
+
+function normalizePerformanceData(data) {
+  return data.map(item => {
+    return {
+      id_key: String(item.id_key || "").trim(),
+      lab: normalizeLab(item.lab || ""),
+      shift: normalizeShift(item.shift || ""),
+      date: String(item.date || "").trim(),
+      purpose: normalizePurpose(item.purpose || ""),
+      need_support: Boolean(item.need_support),
+      is_handover: Boolean(item.is_handover),
+      abnormal_after: Boolean(item.abnormal_after)
+    };
+  }).filter(item => {
+    const hasBasicInfo = item.id_key || item.lab || item.date;
+    const validLab = !item.lab || ALL_LABS.includes(item.lab);
+    const validShift = !item.shift || ALL_SHIFTS.includes(item.shift);
+
+    return hasBasicInfo && validLab && validShift;
+  });
+}
+
+function removeVietnameseAccent(str) {
+  return String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+}
+
+function normalizeLab(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return "";
+
+  const text = removeVietnameseAccent(raw).toLowerCase();
+
+  if (text.includes("lab 1") || text.includes("lab1")) return "Lab 1";
+  if (text.includes("lab 2") || text.includes("lab2")) return "Lab 2";
+  if (text.includes("lab 3") || text.includes("lab3")) return "Lab 3";
+
+  return raw;
+}
+
+function normalizeShift(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return "";
+
+  const text = removeVietnameseAccent(raw).toLowerCase();
+
+  if (text.includes("ca 1") || text.includes("ca1")) return "Ca 1";
+  if (text.includes("ca 2") || text.includes("ca2")) return "Ca 2";
+  if (text.includes("ca 3") || text.includes("ca3")) return "Ca 3";
+  if (text.includes("ca 4") || text.includes("ca4")) return "Ca 4";
+
+  return raw;
+}
+
+function normalizePurpose(value) {
+  /*
+    Gom mục đích về các nhóm theo form đăng ký:
+    Phục vụ học tập · Làm việc nhóm · Phục vụ nghiên cứu khoa học · Thực hiện đồ án ·
+    Chuẩn bị seminar / báo cáo · Thực hành ngoài giờ (còn lại: Khác)
+  */
+  const raw = String(value || "").trim();
+
+  if (!raw) {
+    return "Khác";
+  }
+
+  const text = removeVietnameseAccent(raw).toLowerCase();
+
+  if (
+    text.includes("nghien cuu") ||
+    text.includes("nghiencuu") ||
+    text.includes("research")
+  ) {
+    return "Nghiên cứu khoa học";
+  }
+
+  if (
+    text.includes("do an") ||
+    text.includes("doan") ||
+    text.includes("project")
+  ) {
+    return "Thực hiện đồ án";
+  }
+
+  if (
+    text.includes("seminar") ||
+    text.includes("bao cao") ||
+    text.includes("thuyet trinh")
+  ) {
+    return "Chuẩn bị seminar / báo cáo";
+  }
+
+  if (
+    text.includes("thuc hanh") ||
+    text.includes("ngoai gio")
+  ) {
+    return "Thực hành ngoài giờ";
+  }
+
+  if (
+    text.includes("lam bai tap nhom") ||
+    text.includes("bai tap nhom") ||
+    text.includes("lam viec nhom") ||
+    text.includes("lamviecnhom") ||
+    text.includes("nhom") ||
+    text.includes("team")
+  ) {
+    return "Làm việc nhóm";
+  }
+
+  if (
+    text.includes("phuc vu hoc tap") ||
+    text.includes("phucvuhoc") ||
+    text.includes("hoc tap") ||
+    text.includes("hoc mon") ||
+    text.includes("hoc")
+  ) {
+    return "Phục vụ học tập";
+  }
+
+  return "Khác";
+}
+
+/* =========================
+   FILTER
+========================= */
+
+function setDefaultDateRange() {
+  const validDates = performanceData
+    .map(item => parseDate(item.date))
+    .filter(Boolean)
+    .sort((a, b) => a - b);
+
+  if (!validDates.length) return;
+
+  const fromInput = document.getElementById("filterDateFrom");
+  const toInput = document.getElementById("filterDateTo");
+
+  if (!fromInput.value) {
+    fromInput.value = formatInputDate(validDates[0]);
+  }
+
+  if (!toInput.value) {
+    toInput.value = formatInputDate(validDates[validDates.length - 1]);
+  }
+}
+
+function applyPerformanceFilter() {
+  const dateFrom = document.getElementById("filterDateFrom").value;
+  const dateTo = document.getElementById("filterDateTo").value;
+  const selectedLab = document.getElementById("filterLab").value;
+  const selectedShift = document.getElementById("filterShift").value;
+  const selectedPurpose = document.getElementById("filterPurpose").value;
+
+  filteredPerformanceData = performanceData.filter(item => {
+    const itemDate = parseDate(item.date);
+    const itemDateInput = itemDate ? formatInputDate(itemDate) : "";
+
+    const matchFrom = !dateFrom || itemDateInput >= dateFrom;
+    const matchTo = !dateTo || itemDateInput <= dateTo;
+    const matchLab = !selectedLab || item.lab === selectedLab;
+    const matchShift = !selectedShift || item.shift === selectedShift;
+    const matchPurpose = !selectedPurpose || item.purpose === selectedPurpose;
+
+    return matchFrom && matchTo && matchLab && matchShift && matchPurpose;
+  });
+
+  renderPerformanceStats();
+  renderUsageTrendChart();
+  renderLabUsageChart();
+  renderPurposeChart();
+  renderHeatmap();
+  renderPerformanceTable();
+}
+
+/* =========================
+   STATS
+========================= */
+
+function renderPerformanceStats() {
+  const totalBookings = filteredPerformanceData.length;
+  const handoverCount = filteredPerformanceData.filter(item => item.is_handover).length;
+  const supportCount = filteredPerformanceData.filter(item => item.need_support).length;
+
+  const occupiedSlots = getOccupiedSlotCount(filteredPerformanceData);
+  const totalCapacity = getTotalCapacity(filteredPerformanceData);
+
+  const usageRate = totalCapacity > 0
+    ? Math.round((occupiedSlots / totalCapacity) * 100)
+    : 0;
+
+  const handoverRate = totalBookings > 0
+    ? Math.round((handoverCount / totalBookings) * 100)
+    : 0;
+
+  document.getElementById("statTotalBookings").innerText = totalBookings;
+  document.getElementById("statUsageRate").innerText = `${usageRate}%`;
+  document.getElementById("statHandoverRate").innerText = `${handoverRate}%`;
+  document.getElementById("statSupportCount").innerText = supportCount;
+}
+
+/* =========================
+   CHART 1: TREND
+========================= */
+
+function renderUsageTrendChart() {
+  const dailyMap = {};
+
+  filteredPerformanceData.forEach(item => {
+    const dateObj = parseDate(item.date);
+    const key = dateObj ? formatShortDateFromDate(dateObj) : "";
+
+    if (!key || !item.lab || !item.shift) return;
+
+    if (!dailyMap[key]) {
+      dailyMap[key] = new Set();
+    }
+
+    dailyMap[key].add(`${item.lab}|${item.shift}`);
+  });
+
+  const labels = Object.keys(dailyMap).sort(compareShortDates);
+
+  const values = labels.map(label => {
+    const occupied = dailyMap[label].size;
+    const capacity = getActiveLabs().length * ALL_SHIFTS.length;
+
+    return capacity > 0
+      ? Math.round((occupied / capacity) * 100)
+      : 0;
+  });
+
+  const ctx = document.getElementById("usageTrendChart");
+
+  if (usageTrendChart) {
+    usageTrendChart.destroy();
+  }
+
+  usageTrendChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Tỷ lệ sử dụng (%)",
+        data: values,
+        tension: 0.35,
+        fill: true,
+        borderWidth: 2.5,
+        borderColor: "#d72134",
+        backgroundColor: "rgba(215, 33, 52, 0.08)",
+        pointBackgroundColor: "#d72134",
+        pointBorderColor: "#ffffff",
+        pointBorderWidth: 2,
+        pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: "bottom"
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: {
+            callback: value => value + "%"
+          }
+        }
+      }
+    }
+  });
+}
+
+/* =========================
+   CHART 2: LAB USAGE
+========================= */
+
+function renderLabUsageChart() {
+  const labStats = getLabStats();
+  const labels = labStats.map(item => item.lab);
+  const values = labStats.map(item => item.usageRate);
+
+  const ctx = document.getElementById("labUsageChart");
+
+  if (labUsageChart) {
+    labUsageChart.destroy();
+  }
+
+  labUsageChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Tỷ lệ sử dụng (%)",
+        data: values,
+        backgroundColor: labels.map(lab => LAB_COLORS[lab] || "#102a5e"),
+        borderWidth: 0,
+        borderRadius: 8,
+        maxBarThickness: 44
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: "bottom"
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: {
+            callback: value => value + "%"
+          }
+        }
+      }
+    }
+  });
+}
+
+/* =========================
+   CHART 3: PURPOSE
+========================= */
+
+function renderPurposeChart() {
+  const purposeOrder = [
+    "Phục vụ học tập",
+    "Nghiên cứu khoa học",
+    "Làm việc nhóm",
+    "Khác"
+  ];
+
+  const purposeMap = {
+    "Phục vụ học tập": 0,
+    "Nghiên cứu khoa học": 0,
+    "Làm việc nhóm": 0,
+    "Khác": 0
+  };
+
+  filteredPerformanceData.forEach(item => {
+    const purpose = normalizePurpose(item.purpose);
+
+    if (purposeMap[purpose] !== undefined) {
+      purposeMap[purpose] += 1;
+    } else {
+      purposeMap["Khác"] += 1;
+    }
+  });
+
+  const labels = purposeOrder.filter(label => purposeMap[label] > 0);
+  const values = labels.map(label => purposeMap[label]);
+
+  const ctx = document.getElementById("purposeChart");
+
+  if (purposeChart) {
+    purposeChart.destroy();
+  }
+
+  purposeChart = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: labels,
+      datasets: [{
+        data: values,
+        backgroundColor: labels.map(label => PURPOSE_COLORS[label] || "#8eaadf"),
+        borderColor: "#ffffff",
+        borderWidth: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "58%",
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: {
+            boxWidth: 12,
+            font: {
+              size: 12,
+              weight: "bold"
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const total = values.reduce((sum, value) => sum + value, 0);
+              const value = context.raw || 0;
+              const percent = total > 0
+                ? ((value / total) * 100).toFixed(1)
+                : "0.0";
+
+              return `${context.label}: ${value} lượt (${percent}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+/* =========================
+   HEATMAP
+========================= */
+
+function renderHeatmap() {
+  const container = document.getElementById("heatmapBody");
+
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  const heatmapMap = {};
+  let maxValue = 0;
+
+  ALL_SHIFTS.forEach(shift => {
+    WEEK_DAYS.forEach(day => {
+      heatmapMap[`${shift}|${day}`] = 0;
+    });
+  });
+
+  filteredPerformanceData.forEach(item => {
+    const day = getWeekDayLabel(item.date);
+
+    if (!day || !item.shift) return;
+
+    const key = `${item.shift}|${day}`;
+
+    if (key in heatmapMap) {
+      heatmapMap[key] += 1;
+      maxValue = Math.max(maxValue, heatmapMap[key]);
+    }
+  });
+
+  ALL_SHIFTS.forEach(shift => {
+    const rowLabel = document.createElement("div");
+    rowLabel.className = "heatmap-shift-label";
+    rowLabel.innerText = shift;
+    container.appendChild(rowLabel);
+
+    WEEK_DAYS.forEach(day => {
+      const value = heatmapMap[`${shift}|${day}`] || 0;
+      const level = maxValue > 0 ? Math.ceil((value / maxValue) * 5) : 0;
+
+      const cell = document.createElement("div");
+      cell.className = `heatmap-cell level-${level}`;
+      cell.title = `${day} - ${shift}: ${value} lượt đăng ký`;
+      cell.innerText = value > 0 ? value : "";
+
+      container.appendChild(cell);
+    });
+  });
+}
+
+/* =========================
+   TABLE
+========================= */
+
+function renderPerformanceTable() {
+  const tbody = document.getElementById("performanceTableBody");
+  const labStats = getLabStats();
+
+  if (!labStats.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="performance-empty">
+          Không có dữ liệu phù hợp với bộ lọc
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = labStats.map(item => {
+    const label = getPerformanceLabel(item.usageRate);
+    const labelClass = getPerformanceLabelClass(label);
+
+    return `
+      <tr>
+        <td><b>${escapeHtml(item.lab)}</b></td>
+        <td>${item.total}</td>
+        <td>${item.handover}</td>
+        <td class="green-text">${item.handoverRate}% (${item.handover}/${item.total})</td>
+        <td class="orange-text">${item.support}</td>
+        <td class="red-text">${item.abnormal}</td>
+        <td>
+          <div class="usage-bar-cell">
+            <div class="usage-bar-track">
+              <div class="usage-bar-fill" style="width:${item.usageRate}%"></div>
+            </div>
+            <span>${item.usageRate}%</span>
+          </div>
+        </td>
+        <td>
+          <span class="performance-badge ${labelClass}">
+            ${label}
+          </span>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+/* =========================
+   LAB STATS
+========================= */
+
+function getLabStats() {
+  const labs = getSelectedLabs();
+  const uniqueDates = getUniqueInputDates(filteredPerformanceData);
+  const daysCount = Math.max(uniqueDates.length, 1);
+
+  return labs.map(lab => {
+    const labItems = filteredPerformanceData.filter(item => item.lab === lab);
+
+    const total = labItems.length;
+    const handover = labItems.filter(item => item.is_handover).length;
+    const support = labItems.filter(item => item.need_support).length;
+    const abnormal = labItems.filter(item => item.abnormal_after).length;
+
+    const occupiedSlots = new Set(
+      labItems
+        .filter(item => item.date && item.shift)
+        .map(item => `${item.date}|${item.shift}`)
+    ).size;
+
+    const capacity = daysCount * ALL_SHIFTS.length;
+
+    const usageRate = capacity > 0
+      ? Math.min(Math.round((occupiedSlots / capacity) * 100), 100)
+      : 0;
+
+    const handoverRate = total > 0
+      ? Math.round((handover / total) * 100)
+      : 0;
+
+    return {
+      lab,
+      total,
+      handover,
+      handoverRate,
+      support,
+      abnormal,
+      usageRate
+    };
+  });
+}
+
+function getSelectedLabs() {
+  const selectedLab = document.getElementById("filterLab").value;
+
+  if (selectedLab) {
+    return [selectedLab];
+  }
+
+  const labsFromData = [...new Set(
+    performanceData.map(item => item.lab).filter(Boolean)
+  )];
+
+  if (labsFromData.length) {
+    return labsFromData.sort((a, b) => {
+      const numA = Number(a.replace(/\D/g, ""));
+      const numB = Number(b.replace(/\D/g, ""));
+      return numA - numB;
+    });
+  }
+
+  return ALL_LABS;
+}
+
+function getActiveLabs() {
+  const selectedLab = document.getElementById("filterLab").value;
+
+  if (selectedLab) {
+    return [selectedLab];
+  }
+
+  const labsFromData = [...new Set(
+    filteredPerformanceData.map(item => item.lab).filter(Boolean)
+  )];
+
+  return labsFromData.length ? labsFromData : ALL_LABS;
+}
+
+function getOccupiedSlotCount(data) {
+  return new Set(
+    data
+      .filter(item => item.lab && item.date && item.shift)
+      .map(item => `${item.lab}|${item.date}|${item.shift}`)
+  ).size;
+}
+
+function getTotalCapacity(data) {
+  const labs = getActiveLabs();
+  const dates = getUniqueInputDates(data);
+  const daysCount = Math.max(dates.length, 1);
+
+  return labs.length * ALL_SHIFTS.length * daysCount;
+}
+
+function getUniqueInputDates(data) {
+  return [...new Set(
+    data
+      .map(item => {
+        const date = parseDate(item.date);
+        return date ? formatInputDate(date) : "";
+      })
+      .filter(Boolean)
+  )];
+}
+
+function getPerformanceLabel(rate) {
+  if (rate >= 85) return "Rất tốt";
+  if (rate >= 70) return "Tốt";
+  if (rate >= 50) return "Trung bình";
+  return "Thấp";
+}
+
+function getPerformanceLabelClass(label) {
+  if (label === "Rất tốt") return "badge-excellent";
+  if (label === "Tốt") return "badge-good";
+  if (label === "Trung bình") return "badge-medium";
+  return "badge-low";
+}
+
+/* =========================
+   DATE HELPER
+========================= */
+
+function parseDate(dateText) {
+  if (!dateText) return null;
+
+  const text = String(dateText).trim();
+
+  let match = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+
+  if (match) {
+    const dd = Number(match[1]);
+    const mm = Number(match[2]) - 1;
+    const yyyy = Number(match[3]);
+
+    return new Date(yyyy, mm, dd);
+  }
+
+  match = text.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+
+  if (match) {
+    const yyyy = Number(match[1]);
+    const mm = Number(match[2]) - 1;
+    const dd = Number(match[3]);
+
+    return new Date(yyyy, mm, dd);
+  }
+
+  match = text.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
+
+  if (match) {
+    const dd = Number(match[1]);
+    const mm = Number(match[2]) - 1;
+    const yyyy = Number(match[3]);
+
+    return new Date(yyyy, mm, dd);
+  }
+
+  return null;
+}
+
+function formatInputDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${d}`;
+}
+
+function formatShortDateFromDate(date) {
+  const d = String(date.getDate()).padStart(2, "0");
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+
+  return `${d}/${m}`;
+}
+
+function compareShortDates(a, b) {
+  const [da, ma] = a.split("/").map(Number);
+  const [db, mb] = b.split("/").map(Number);
+
+  if (ma !== mb) return ma - mb;
+
+  return da - db;
+}
+
+function getWeekDayLabel(dateText) {
+  const date = parseDate(dateText);
+
+  if (!date) return "";
+
+  const day = date.getDay();
+
+  if (day === 1) return "T2";
+  if (day === 2) return "T3";
+  if (day === 3) return "T4";
+  if (day === 4) return "T5";
+  if (day === 5) return "T6";
+  if (day === 6) return "T7";
+
+  return "";
+}
+
+/* =========================
+   EXPORT CSV
+========================= */
+
+function exportPerformanceCSV() {
+  /*
+    Xuất dữ liệu gốc/chưa tính toán từ API /api/lab-performance.
+    File tải về dạng .xls, mở bằng Excel đúng cột và không lỗi tiếng Việt.
+  */
+
+  const headers = [
+    "ID đăng ký",
+    "Phòng Lab",
+    "Ca",
+    "Ngày sử dụng",
+    "Mục đích sử dụng",
+    "Cần hỗ trợ kỹ thuật",
+    "Đã bàn giao",
+    "Bất thường sau sử dụng"
+  ];
+
+  const rows = filteredPerformanceData.map(item => [
+    item.id_key || "",
+    item.lab || "",
+    item.shift || "",
+    item.date || "",
+    item.purpose || "",
+    item.need_support ? "Có" : "Không",
+    item.is_handover ? "Có" : "Không",
+    item.abnormal_after ? "Có" : "Không"
+  ]);
+
+  function escapeExcel(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  const headerHtml = headers
+    .map(header => `<th>${escapeExcel(header)}</th>`)
+    .join("");
+
+  const bodyHtml = rows
+    .map(row => {
+      return `
+        <tr>
+          ${row.map(cell => `<td>${escapeExcel(cell)}</td>`).join("")}
+        </tr>
+      `;
+    })
+    .join("");
+
+  const htmlContent = `
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+          }
+
+          th {
+            background: #eaf1f8;
+            font-weight: bold;
+            text-align: left;
+          }
+
+          th, td {
+            border: 1px solid #999999;
+            padding: 6px;
+            mso-number-format: "\\@";
+          }
+        </style>
+      </head>
+
+      <body>
+        <table>
+          <thead>
+            <tr>${headerHtml}</tr>
+          </thead>
+
+          <tbody>
+            ${bodyHtml}
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob(["\uFEFF" + htmlContent], {
+    type: "application/vnd.ms-excel;charset=utf-8;"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "du_lieu_goc_hieu_suat_phong_lab.xls";
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+}
+
+/* =========================
+   SAFE HTML
+========================= */
+
+function escapeHtml(text) {
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/* =========================
+   INIT
+========================= */
+
+document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("filterDateFrom").addEventListener("change", applyPerformanceFilter);
+  document.getElementById("filterDateTo").addEventListener("change", applyPerformanceFilter);
+  document.getElementById("filterLab").addEventListener("change", applyPerformanceFilter);
+  document.getElementById("filterShift").addEventListener("change", applyPerformanceFilter);
+  document.getElementById("filterPurpose").addEventListener("change", applyPerformanceFilter);
+
+  loadLabPerformance();
+  loadSystemNotifications();
+
+  setInterval(loadSystemNotifications, 60000);
+});
+</script>
+<script>
+/* =========================================================
+   GIAO DIỆN BIỂU ĐỒ HIỆU SUẤT (phong cách VLU)
+   - Chỉ thay CÁCH VẼ biểu đồ và thẻ KPI.
+   - Cách lấy & tính dữ liệu giữ nguyên script gốc ở trên:
+     dùng lại filteredPerformanceData, getLabStats(), parseDate(),
+     getOccupiedSlotCount(), getTotalCapacity()...
+========================================================= */
+
+Chart.defaults.font.family = "'IBM Plex Sans', Arial, sans-serif";
+Chart.defaults.font.size = 12;
+Chart.defaults.color = "#6e6e76";
+Chart.defaults.borderColor = "#ececf0";
+Chart.defaults.plugins.tooltip.backgroundColor = "#141416";
+Chart.defaults.plugins.tooltip.titleFont = { weight: "600", size: 12 };
+Chart.defaults.plugins.tooltip.bodyFont = { size: 12 };
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.plugins.tooltip.cornerRadius = 6;
+Chart.defaults.plugins.tooltip.boxPadding = 4;
+
+/* Bảng màu: Lab giữ màu nhận diện như lịch; mục đích theo tông đỏ - đen VLU */
+Object.assign(LAB_COLORS, {
+  "Lab 1": "#1f6feb",
+  "Lab 2": "#15803d",
+  "Lab 3": "#c27c00"
+});
+
+Object.assign(PURPOSE_COLORS, {
+  "Phục vụ học tập": "#d72134",
+  "Làm việc nhóm": "#9a9aa3",
+  "Nghiên cứu khoa học": "#1d1d1f",
+  "Thực hiện đồ án": "#1f6feb",
+  "Chuẩn bị seminar / báo cáo": "#c27c00",
+  "Thực hành ngoài giờ": "#15803d",
+  "Khác": "#f2b8bf"
+});
+
+const CHART_GRID = "#ececf0";
+const CHART_INK = "#1d1d1f";
+
+/* ---------- Plugin dùng chung ---------- */
+
+// Hiện chữ khi không có dữ liệu
+const emptyStatePlugin = {
+  id: "emptyState",
+  afterDraw(chart) {
+    const hasData = chart.data.datasets.some(ds => (ds.data || []).some(v => Number(v) > 0));
+    if (hasData || !chart.chartArea) return;
+
+    const { ctx, chartArea: a } = chart;
+    ctx.save();
+    ctx.fillStyle = "#9a9aa3";
+    ctx.font = "500 13px 'IBM Plex Sans', Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Không có dữ liệu phù hợp bộ lọc", (a.left + a.right) / 2, (a.top + a.bottom) / 2);
+    ctx.restore();
+  }
+};
+
+// Vẽ nền xám 0-100% phía sau thanh ngang + số % ở cuối
+const barTrackPlugin = {
+  id: "barTrack",
+  beforeDatasetsDraw(chart) {
+    const meta = chart.getDatasetMeta(0);
+    const x = chart.scales.x;
+    const { ctx } = chart;
+
+    ctx.save();
+    ctx.fillStyle = "#f1f1f4";
+
+    meta.data.forEach(bar => {
+      const left = x.getPixelForValue(0);
+      const right = x.getPixelForValue(100);
+      const h = bar.height;
+
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(left, bar.y - h / 2, right - left, h, 6);
+      } else {
+        ctx.rect(left, bar.y - h / 2, right - left, h);
+      }
+      ctx.fill();
+    });
+
+    ctx.restore();
+  },
+  afterDatasetsDraw(chart) {
+    const meta = chart.getDatasetMeta(0);
+    const values = chart.data.datasets[0].data;
+    const { ctx, chartArea } = chart;
+
+    ctx.save();
+    ctx.fillStyle = CHART_INK;
+    ctx.font = "700 13px 'IBM Plex Sans', Arial, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+
+    meta.data.forEach((bar, i) => {
+      ctx.fillText(`${values[i]}%`, chartArea.right + 10, bar.y);
+    });
+
+    ctx.restore();
+  }
+};
+
+/* =========================
+   THẺ KPI: thêm dòng chi tiết
+========================= */
+
+const baseRenderPerformanceStats = window.renderPerformanceStats;
+
+window.renderPerformanceStats = function () {
+  baseRenderPerformanceStats();
+
+  const totalBookings = filteredPerformanceData.length;
+  const handoverCount = filteredPerformanceData.filter(item => item.is_handover).length;
+  const occupiedSlots = getOccupiedSlotCount(filteredPerformanceData);
+  const totalCapacity = getTotalCapacity(filteredPerformanceData);
+  const daysCount = getUniqueInputDates(filteredPerformanceData).length;
+
+  const usageRate = totalCapacity > 0 ? Math.round((occupiedSlots / totalCapacity) * 100) : 0;
+  const handoverRate = totalBookings > 0 ? Math.round((handoverCount / totalBookings) * 100) : 0;
+
+  const meter = percent => `<div class="stat-meter"><i style="width:${Math.min(Math.max(percent, 0), 100)}%"></i></div>`;
+
+  const noteTotal = document.getElementById("perfNoteTotal");
+  const noteUsage = document.getElementById("perfNoteUsage");
+  const noteHandover = document.getElementById("perfNoteHandover");
+
+  if (noteTotal) {
+    noteTotal.innerHTML = `<span>Trong <b>${daysCount}</b> ngày có lịch đăng ký</span>`;
+  }
+
+  if (noteUsage) {
+    noteUsage.innerHTML = `${meter(usageRate)}<span><b>${occupiedSlots}</b> / ${totalCapacity} ca đã được sử dụng</span>`;
+  }
+
+  if (noteHandover) {
+    noteHandover.innerHTML = `${meter(handoverRate)}<span><b>${handoverCount}</b> / ${totalBookings} lượt đã bàn giao</span>`;
+  }
+};
+
+/* =========================
+   BIỂU ĐỒ 1: XU HƯỚNG
+   (cách tính giống hệt bản gốc)
+========================= */
+
+window.renderUsageTrendChart = function () {
+  const dailyMap = {};
+
+  filteredPerformanceData.forEach(item => {
+    const dateObj = parseDate(item.date);
+    const key = dateObj ? formatShortDateFromDate(dateObj) : "";
+
+    if (!key || !item.lab || !item.shift) return;
+
+    if (!dailyMap[key]) {
+      dailyMap[key] = new Set();
+    }
+
+    dailyMap[key].add(`${item.lab}|${item.shift}`);
+  });
+
+  const labels = Object.keys(dailyMap).sort(compareShortDates);
+
+  const values = labels.map(label => {
+    const occupied = dailyMap[label].size;
+    const capacity = getActiveLabs().length * ALL_SHIFTS.length;
+
+    return capacity > 0
+      ? Math.round((occupied / capacity) * 100)
+      : 0;
+  });
+
+  // Đường trung bình 7 ngày có lịch gần nhất (làm mượt để dễ đọc xu hướng)
+  const movingAverage = values.map((_, i) => {
+    const slice = values.slice(Math.max(0, i - 6), i + 1);
+    return Math.round(slice.reduce((sum, v) => sum + v, 0) / slice.length);
+  });
+
+  // Chỉ số tóm tắt ở góc phải
+  const meta = document.getElementById("trendMeta");
+
+  if (meta) {
+    if (values.length) {
+      const avg = Math.round(values.reduce((sum, v) => sum + v, 0) / values.length);
+      const peak = Math.max(...values);
+      const peakLabel = labels[values.indexOf(peak)];
+
+      meta.innerHTML = `
+        <div><span>TB theo ngày</span><b>${avg}%</b></div>
+        <div><span>Cao nhất</span><b>${peak}%<small>${escapeHtml(peakLabel)}</small></b></div>
+        <div><span>Ngày có lịch</span><b>${labels.length}</b></div>
+      `;
+    } else {
+      meta.innerHTML = "";
+    }
+  }
+
+  const ctx = document.getElementById("usageTrendChart");
+
+  if (usageTrendChart) {
+    usageTrendChart.destroy();
+  }
+
+  usageTrendChart = new Chart(ctx, {
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          type: "line",
+          label: "Trung bình 7 ngày",
+          data: movingAverage,
+          borderColor: "#b5182a",
+          borderWidth: 2.5,
+          tension: 0.35,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: "#b5182a",
+          pointHoverBorderColor: "#ffffff",
+          pointHoverBorderWidth: 2,
+          fill: false,
+          order: 1
+        },
+        {
+          type: "bar",
+          label: "Tỷ lệ sử dụng",
+          data: values,
+          backgroundColor: "rgba(215, 33, 52, 0.18)",
+          hoverBackgroundColor: "#d72134",
+          borderRadius: 3,
+          categoryPercentage: 0.9,
+          barPercentage: 0.9,
+          order: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => `Ngày ${items[0].label}`,
+            label: c => ` ${c.dataset.label}: ${c.raw}%`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { color: CHART_GRID },
+          ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 14 }
+        },
+        y: {
+          beginAtZero: true,
+          max: 100,
+          border: { display: false, dash: [4, 4] },
+          grid: { color: CHART_GRID },
+          ticks: { stepSize: 25, padding: 8, callback: value => value + "%" }
+        }
+      }
+    },
+    plugins: [emptyStatePlugin]
+  });
+};
+
+/* =========================
+   BIỂU ĐỒ 2: THEO PHÒNG LAB
+   (số liệu lấy từ getLabStats() gốc)
+========================= */
+
+window.renderLabUsageChart = function () {
+  const labStats = getLabStats();
+  const labels = labStats.map(item => item.lab);
+  const values = labStats.map(item => item.usageRate);
+
+  const ctx = document.getElementById("labUsageChart");
+
+  if (labUsageChart) {
+    labUsageChart.destroy();
+  }
+
+  labUsageChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Tỷ lệ sử dụng",
+        data: values,
+        backgroundColor: labels.map(lab => LAB_COLORS[lab] || CHART_INK),
+        borderRadius: 6,
+        borderSkipped: false,
+        barPercentage: 0.62,
+        categoryPercentage: 0.9,
+        maxBarThickness: 30
+      }]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { right: 46 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: c => {
+              const s = labStats[c.dataIndex];
+              return ` Sử dụng ${s.usageRate}% · ${s.total} lượt đăng ký`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: 0,
+          max: 100,
+          border: { display: false, dash: [4, 4] },
+          grid: { color: CHART_GRID },
+          ticks: { stepSize: 25, callback: value => value + "%" }
+        },
+        y: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: { color: CHART_INK, font: { size: 13, weight: "600" } }
+        }
+      }
+    },
+    plugins: [barTrackPlugin, emptyStatePlugin]
+  });
+};
+
+/* =========================
+   BIỂU ĐỒ 3: MỤC ĐÍCH SỬ DỤNG
+   (cách đếm giống hệt bản gốc)
+========================= */
+
+window.renderPurposeChart = function () {
+  // Đủ các lựa chọn trên form đăng ký (normalizePurpose gom về các nhóm này)
+  const purposeOrder = [
+    "Phục vụ học tập",
+    "Làm việc nhóm",
+    "Nghiên cứu khoa học",
+    "Thực hiện đồ án",
+    "Chuẩn bị seminar / báo cáo",
+    "Thực hành ngoài giờ",
+    "Khác"
+  ];
+
+  const purposeMap = Object.fromEntries(purposeOrder.map(label => [label, 0]));
+
+  filteredPerformanceData.forEach(item => {
+    const purpose = normalizePurpose(item.purpose);
+
+    if (purposeMap[purpose] !== undefined) {
+      purposeMap[purpose] += 1;
+    } else {
+      purposeMap["Khác"] += 1;
+    }
+  });
+
+  const labels = purposeOrder.filter(label => purposeMap[label] > 0);
+  const values = labels.map(label => purposeMap[label]);
+  const total = values.reduce((sum, value) => sum + value, 0);
+
+  // Tổng ở giữa vòng tròn
+  const totalEl = document.getElementById("purposeTotal");
+  if (totalEl) totalEl.textContent = total;
+
+  // Chú thích bên cạnh: tên - số lượt - phần trăm
+  const legend = document.getElementById("purposeLegend");
+
+  if (legend) {
+    legend.innerHTML = labels.length
+      ? labels.map((label, i) => {
+          const percent = total > 0 ? Math.round((values[i] / total) * 100) : 0;
+          return `
+            <li>
+              <i style="background:${PURPOSE_COLORS[label] || "#9a9aa3"}"></i>
+              <span>${escapeHtml(label)}</span>
+              <b>${percent}%</b>
+              <small>${values[i]} lượt</small>
+            </li>
+          `;
+        }).join("")
+      : `<li class="donut-empty">Không có dữ liệu phù hợp bộ lọc</li>`;
+  }
+
+  const ctx = document.getElementById("purposeChart");
+
+  if (purposeChart) {
+    purposeChart.destroy();
+  }
+
+  purposeChart = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: labels.length ? labels : ["Không có dữ liệu"],
+      datasets: [{
+        data: values.length ? values : [1],
+        backgroundColor: labels.length
+          ? labels.map(label => PURPOSE_COLORS[label] || "#9a9aa3")
+          : ["#f1f1f4"],
+        borderColor: "#ffffff",
+        borderWidth: 2,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "72%",
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: labels.length > 0,
+          callbacks: {
+            label: function (context) {
+              const value = context.raw || 0;
+              const percent = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
+              return ` ${context.label}: ${value} lượt (${percent}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+};
+
+/* =========================
+   HEATMAP: giữ bản gốc, thêm dòng "cao điểm"
+========================= */
+
+const baseRenderHeatmap = window.renderHeatmap;
+
+window.renderHeatmap = function () {
+  baseRenderHeatmap();
+
+  const counts = {};
+
+  filteredPerformanceData.forEach(item => {
+    const day = getWeekDayLabel(item.date);
+    if (!day || !ALL_SHIFTS.includes(item.shift)) return;
+
+    const key = `${day} · ${item.shift}`;
+    counts[key] = (counts[key] || 0) + 1;
+  });
+
+  const meta = document.getElementById("heatmapMeta");
+  const peak = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+
+  if (meta) {
+    meta.innerHTML = peak
+      ? `Cao điểm nhất: <b>${escapeHtml(peak[0])}</b> – ${peak[1]} lượt`
+      : "Số lượt đăng ký theo ca và thứ";
+  }
+};
+</script>
+
+{% endblock %}

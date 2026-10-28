@@ -1,0 +1,962 @@
+{% extends "base.html" %}
+{% set active_page = "home" %}
+{% set page_title = "Trang chủ" %}
+{% set page_desc = "Công việc của kỹ thuật viên: thông báo cần kiểm tra, yêu cầu hỗ trợ kỹ thuật và lịch làm việc của kỹ thuật viên – trợ giảng tại phòng Lab." %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='pages.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- =====================================================
+     KPI
+====================================================== -->
+<section class="stat-grid">
+
+  <div class="stat-card tone-red">
+    <div class="stat-top">
+      <p class="stat-label">Thông báo chưa kiểm tra</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m20 15.05-1.5-2.6V8.5C18.5 4.915 15.585 2 12 2a6.506 6.506 0 0 0-6.5 6.5v3.95L4 15.05V19h4.325c.35 1.71 1.865 3 3.675 3 1.81 0 3.325-1.29 3.675-3H20v-3.95Zm-8 5.45c-.975 0-1.8-.63-2.11-1.5h4.225c-.31.87-1.135 1.5-2.11 1.5H12Zm6.5-3h-13v-2.05l1.5-2.6V8.495c0-2.755 2.245-5 5-5s5 2.245 5 5v4.355l1.5 2.6v2.05Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="kpiUnchecked">–</h3>
+    <div class="stat-foot" id="kpiUncheckedNote">&nbsp;</div>
+  </div>
+
+  <div class="stat-card tone-amber">
+    <div class="stat-top">
+      <p class="stat-label">Yêu cầu hỗ trợ hôm nay</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m15.23 12.79 5.74 5.74 1.06-1.06-5.02-5.02c.325-.87.49-1.775.49-2.7C17.5 5.475 14.025 2 9.75 2c-.47 0-.94.045-1.4.13-.465.085-.84.415-.98.865-.14.445-.02.925.31 1.25l2.815 2.815v3.44h-3.44L4.24 7.685a1.244 1.244 0 0 0-1.25-.31c-.45.14-.78.515-.865.98-.085.46-.13.93-.13 1.4 0 4.275 3.475 7.75 7.75 7.75.925 0 1.83-.165 2.7-.49l5.02 5.02 1.06-1.06-5.74-5.74-.475.215c-.82.37-1.685.555-2.57.555A6.259 6.259 0 0 1 3.525 9.1l2.905 2.905h4.31c.69 0 1.25-.56 1.25-1.25V6.44L9.085 3.535A6.259 6.259 0 0 1 15.99 9.75c0 .885-.19 1.75-.555 2.57l-.215.475.01-.005Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="kpiSupportToday">–</h3>
+    <div class="stat-foot" id="kpiSupportTodayNote">&nbsp;</div>
+  </div>
+
+  <div class="stat-card tone-dark">
+    <div class="stat-top">
+      <p class="stat-label">Hỗ trợ 7 ngày tới</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M17.5 3h.75A2.755 2.755 0 0 1 21 5.75v12.5A2.755 2.755 0 0 1 18.25 21H5.75A2.755 2.755 0 0 1 3 18.25V5.75A2.755 2.755 0 0 1 5.75 3h.75V2H8v1h8V2h1.5v1Zm-11 1.5h-.75c-.69 0-1.25.56-1.25 1.25V7.5h15V5.75c0-.69-.56-1.25-1.25-1.25h-.75V6H16V4.5H8V6H6.5V4.5Zm-.75 15h12.5c.69 0 1.25-.56 1.25-1.25V9h-15v9.25c0 .69.56 1.25 1.25 1.25Zm5.5-8.5h1.5v5H14v1.5h-4V16h1.25v-2.5H10V12h1.25v-1Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="kpiSupportWeek">–</h3>
+    <div class="stat-foot" id="kpiSupportWeekNote">&nbsp;</div>
+  </div>
+
+  <div class="stat-card tone-blue">
+    <div class="stat-top">
+      <p class="stat-label">Ca làm việc tuần này</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M13 6c0 2.205 1.796 4 4 4 2.206 0 4-1.795 4-4s-1.794-4-4-4c-2.204 0-4 1.795-4 4Zm1.5 0a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1-5 0ZM3 11.5c0 2.205 1.795 4 4 4s4-1.795 4-4-1.795-4-4-4-4 1.795-4 4Zm1.5 0a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1-5 0Zm6.216 9.945-.54-2.02A1.247 1.247 0 0 0 8.97 18.5H5.04c-.565 0-1.06.38-1.205.925l-.54 2.02-1.45-.39.54-2.02a2.755 2.755 0 0 1 2.655-2.04h3.93a2.75 2.75 0 0 1 2.655 2.04l.54 2.015-1.45.39v.005Zm9.46-7.52.54 2.02v-.005l1.45-.39-.54-2.015a2.75 2.75 0 0 0-2.655-2.04h-3.93c-1.24 0-2.335.84-2.655 2.04l-.54 2.02 1.45.39.54-2.02c.145-.545.64-.925 1.205-.925h3.93c.565 0 1.06.38 1.205.925Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="kpiShifts">–</h3>
+    <div class="stat-foot" id="kpiShiftsNote">&nbsp;</div>
+  </div>
+
+</section>
+
+<!-- =====================================================
+     THÔNG BÁO + YÊU CẦU HỖ TRỢ
+====================================================== -->
+<div class="home-grid">
+
+  <section class="card card-pad home-panel">
+    <div class="panel-head">
+      <h3 class="section-title">Thông báo cần kiểm tra</h3>
+      <button type="button" class="btn btn-outline btn-sm" id="checkAllButton" onclick="checkAllNotifications()"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.75 18.29c-.32 0-.64-.12-.885-.365l-4.645-4.65 1.06-1.06 4.47 4.47 10.97-10.97 1.06 1.06L9.635 17.92a1.245 1.245 0 0 1-.885.365v.005Z" fill="currentColor"/></svg> Đánh dấu tất cả</button>
+    </div>
+
+    <div class="panel-tabs" role="tablist">
+      <button type="button" class="active" data-tab="unchecked" onclick="setNotificationTab('unchecked')">Chưa kiểm tra <b id="tabUnchecked">0</b></button>
+      <button type="button" data-tab="checked" onclick="setNotificationTab('checked')">Đã kiểm tra <b id="tabChecked">0</b></button>
+    </div>
+
+    <ul class="task-list" id="notificationTasks">
+      <li class="task-empty">Đang tải thông báo...</li>
+    </ul>
+  </section>
+
+  <section class="card card-pad home-panel">
+    <div class="panel-head">
+      <h3 class="section-title">Yêu cầu hỗ trợ kỹ thuật</h3>
+    </div>
+
+    <div class="panel-tabs" role="tablist">
+      <button type="button" class="active" data-tab="upcoming" onclick="setSupportTab('upcoming')">Sắp tới <b id="tabUpcoming">0</b></button>
+      <button type="button" data-tab="past" onclick="setSupportTab('past')">14 ngày qua <b id="tabPast">0</b></button>
+    </div>
+
+    <div class="support-list" id="supportList">
+      <p class="task-empty">Đang tải yêu cầu hỗ trợ...</p>
+    </div>
+  </section>
+
+</div>
+
+<!-- =====================================================
+     LỊCH LÀM VIỆC KỸ THUẬT VIÊN - TRỢ GIẢNG
+====================================================== -->
+<section class="card card-pad schedule-card">
+
+  <div class="schedule-head">
+    <div>
+      <h3 class="section-title">Lịch làm việc tại phòng Lab</h3>
+    </div>
+
+    <div class="schedule-actions">
+      <div class="week-nav">
+        <button type="button" onclick="changeScheduleWeek(-1)" aria-label="Tuần trước">‹</button>
+        <b id="scheduleWeekTitle">Tuần ...</b>
+        <button type="button" onclick="changeScheduleWeek(1)" aria-label="Tuần sau">›</button>
+      </div>
+      <button type="button" class="btn btn-outline btn-sm" onclick="goToCurrentWeek()">Tuần này</button>
+      <button type="button" class="btn btn-red" onclick="openScheduleModal()"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.25h-7.25V4h-1.5v7.25H4v1.5h7.25V20h1.5v-7.25H20v-1.5Z" fill="currentColor"/></svg> Thêm lịch làm việc</button>
+    </div>
+  </div>
+
+  <div class="message" id="scheduleMessage"></div>
+
+  <div class="schedule-legend">
+    <span><i class="lg-ktv"></i>Kỹ thuật viên</span>
+    <span><i class="lg-ta"></i>Trợ giảng</span>
+    <span><i class="lg-gv"></i>Giảng viên</span>
+    <span><i class="lg-support"></i>Ca có yêu cầu hỗ trợ kỹ thuật</span>
+    <span class="hint">Nhấn vào ô trống để thêm lịch cho ca đó.</span>
+  </div>
+
+  <div class="schedule-scroll">
+    <div class="schedule-grid" id="scheduleGrid"></div>
+  </div>
+
+  <h4 class="sub-title">Tổng giờ làm việc trong tuần</h4>
+
+  <div class="table-wrap">
+    <table class="hours-table">
+      <thead>
+        <tr>
+          <th>Họ tên</th>
+          <th>Vai trò</th>
+          <th>Số ca</th>
+          <th>Số giờ</th>
+          <th>Các ca trong tuần</th>
+        </tr>
+      </thead>
+      <tbody id="hoursTableBody">
+        <tr><td colspan="5" class="empty-cell">Đang tải lịch...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+<!-- =====================================================
+     HỘP THOẠI THÊM LỊCH
+====================================================== -->
+<div class="vlu-modal" id="scheduleModal" hidden onclick="if (event.target === this) closeScheduleModal()">
+  <form class="vlu-modal-dialog" id="scheduleForm" role="dialog" aria-modal="true" aria-labelledby="scheduleModalTitle" novalidate>
+    <div class="vlu-modal-head">
+      <div>
+        <h3 id="scheduleModalTitle">Thêm lịch làm việc</h3>
+        <p>Lịch lưu vào Google Sheet (LAB_STAFF_SCHEDULE); email phân công được gửi tự động như hệ thống Booking.</p>
+      </div>
+      <button type="button" class="vlu-modal-close" onclick="closeScheduleModal()" aria-label="Đóng"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m20.28 4.78-1.06-1.06L12 10.94 4.78 3.72 3.72 4.78 10.94 12l-7.22 7.22 1.06 1.06L12 13.06l7.22 7.22 1.06-1.06L13.06 12l7.22-7.22Z" fill="currentColor"/></svg></button>
+    </div>
+
+    <div class="vlu-modal-body schedule-form">
+
+      <div class="form-row">
+        <div class="field">
+          <label for="staffName">Họ tên người trực</label>
+          <input id="staffName" class="input" type="text" list="staffNames" maxlength="80" placeholder="Ví dụ: Nguyễn Văn A" required>
+          <datalist id="staffNames"></datalist>
+        </div>
+
+        <div class="field">
+          <label for="staffRole">Vai trò</label>
+          <select id="staffRole">
+            <option value="Trợ giảng">Trợ giảng</option>
+            <option value="Giảng viên">Giảng viên</option>
+            <option value="Kỹ thuật viên">Kỹ thuật viên</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="staffEmail">Email người trực <small>(nhận thông báo lịch trực)</small></label>
+        <input id="staffEmail" class="input" type="email" maxlength="120" placeholder="Ví dụ: nguyenvana@vlu.edu.vn" autocomplete="off">
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="staffDate">Ngày làm việc</label>
+          <input id="staffDate" class="input" type="date" required>
+        </div>
+
+        <div class="field">
+          <label for="staffLab">Phòng Lab</label>
+          <select id="staffLab">
+            <option value="Lab 1">Lab 1</option>
+            <option value="Lab 2">Lab 2</option>
+            <option value="Lab 3">Lab 3</option>
+            <option value="Tất cả phòng Lab">Tất cả phòng Lab</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Ca làm việc</label>
+        <div class="shift-checks" id="shiftChecks"></div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="staffRepeat">Lặp lại hằng tuần đến <small>(tùy chọn)</small></label>
+          <input id="staffRepeat" class="input" type="date">
+        </div>
+
+        <div class="field">
+          <label for="staffNote">Ghi chú <small>(tùy chọn)</small></label>
+          <input id="staffNote" class="input" type="text" maxlength="120" placeholder="Ví dụ: Hỗ trợ lớp IEM101">
+        </div>
+      </div>
+
+      <div class="message" id="scheduleFormMessage"></div>
+
+    </div>
+
+    <div class="vlu-modal-foot">
+      <button type="button" class="btn btn-outline" onclick="closeScheduleModal()">Hủy</button>
+      <button type="submit" class="btn btn-red" id="scheduleSaveButton"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.75 18.29c-.32 0-.64-.12-.885-.365l-4.645-4.65 1.06-1.06 4.47 4.47 10.97-10.97 1.06 1.06L9.635 17.92a1.245 1.245 0 0 1-.885.365v.005Z" fill="currentColor"/></svg> Lưu lịch</button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* =========================================================
+   TRANG CHỦ KỸ THUẬT VIÊN
+========================================================= */
+
+const HOME_SHIFTS = [
+  { name: "Ca 1", time: "07:00 – 09:30", hours: 2.5 },
+  { name: "Ca 2", time: "09:30 – 12:00", hours: 2.5 },
+  { name: "Ca 3", time: "13:00 – 15:30", hours: 2.5 },
+  { name: "Ca 4", time: "15:30 – 18:00", hours: 2.5 }
+];
+const WEEKDAY_NAMES = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+const ICON_CHECK = `<svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.75 18.29c-.32 0-.64-.12-.885-.365l-4.645-4.65 1.06-1.06 4.47 4.47 10.97-10.97 1.06 1.06L9.635 17.92a1.245 1.245 0 0 1-.885.365v.005Z" fill="currentColor"/></svg>`;
+const ICON_CLOSE = `<svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m20.28 4.78-1.06-1.06L12 10.94 4.78 3.72 3.72 4.78 10.94 12l-7.22 7.22 1.06 1.06L12 13.06l7.22 7.22 1.06-1.06L13.06 12l7.22-7.22Z" fill="currentColor"/></svg>`;
+const ICON_TOOL = `<svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m15.23 12.79 5.74 5.74 1.06-1.06-5.02-5.02c.325-.87.49-1.775.49-2.7C17.5 5.475 14.025 2 9.75 2c-.47 0-.94.045-1.4.13-.465.085-.84.415-.98.865-.14.445-.02.925.31 1.25l2.815 2.815v3.44h-3.44L4.24 7.685a1.244 1.244 0 0 0-1.25-.31c-.45.14-.78.515-.865.98-.085.46-.13.93-.13 1.4 0 4.275 3.475 7.75 7.75 7.75.925 0 1.83-.165 2.7-.49l5.02 5.02 1.06-1.06-5.74-5.74-.475.215c-.82.37-1.685.555-2.57.555A6.259 6.259 0 0 1 3.525 9.1l2.905 2.905h4.31c.69 0 1.25-.56 1.25-1.25V6.44L9.085 3.535A6.259 6.259 0 0 1 15.99 9.75c0 .885-.19 1.75-.555 2.57l-.215.475.01-.005Z" fill="currentColor"/></svg>`;
+
+let notifications = [];
+let supports = [];
+let schedule = [];
+let notificationTab = "unchecked";
+let supportTab = "upcoming";
+let scheduleWeekStart = mondayOf(new Date());
+
+/* ---------- Tiện ích ---------- */
+
+function escapeHtml(text) {
+  return String(text ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function toISO(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function fromISO(iso) {
+  const [y, m, d] = String(iso).split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function addDays(date, days) {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function mondayOf(date) {
+  const copy = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = copy.getDay();
+  copy.setDate(copy.getDate() - (day === 0 ? 6 : day - 1));
+  return copy;
+}
+
+function shortDate(date) {
+  return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function dayLabel(iso) {
+  const today = toISO(new Date());
+  const tomorrow = toISO(addDays(new Date(), 1));
+  const date = fromISO(iso);
+  const text = `${WEEKDAY_NAMES[date.getDay()]}, ${shortDate(date)}/${date.getFullYear()}`;
+
+  if (iso === today) return `Hôm nay · ${text}`;
+  if (iso === tomorrow) return `Ngày mai · ${text}`;
+  return text;
+}
+
+const ROLE_PILL = { "Kỹ thuật viên": "pill-red", "Trợ giảng": "pill-blue", "Giảng viên": "pill-green" };
+
+function roleClass(role) {
+  if (role === "Kỹ thuật viên") return "role-ktv";
+  if (role === "Giảng viên") return "role-gv";
+  return "role-ta";
+}
+
+function shiftTime(name) {
+  const shift = HOME_SHIFTS.find(item => item.name === name);
+  return shift ? shift.time : "";
+}
+
+async function readJson(response) {
+  const json = await response.json().catch(() => ({}));
+
+  if (!response.ok || !json.success) {
+    throw new Error(json.error || `Lỗi máy chủ (HTTP ${response.status}).`);
+  }
+
+  return json;
+}
+
+function showBox(id, text, type) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  box.className = text ? `message show ${type}` : "message";
+  box.textContent = text || "";
+}
+
+/* ---------- KPI ---------- */
+
+function renderKpis() {
+  const today = toISO(new Date());
+  const weekEnd = toISO(addDays(new Date(), 7));
+  const unchecked = notifications.filter(item => !item.checked);
+
+  const todaySupport = supports.filter(item => item.date_iso === today);
+  const todayOpen = todaySupport.filter(item => !item.checked);
+  const weekSupport = supports.filter(item => item.date_iso > today && item.date_iso <= weekEnd);
+  const weekOpen = weekSupport.filter(item => !item.checked);
+
+  const monday = toISO(mondayOf(new Date()));
+  const sunday = toISO(addDays(mondayOf(new Date()), 6));
+  const weekShifts = schedule.filter(item => item.date_iso >= monday && item.date_iso <= sunday);
+  const people = new Set(weekShifts.map(item => item.name.toLowerCase()));
+  const hours = weekShifts.reduce((sum, item) => sum + (HOME_SHIFTS.find(s => s.name === item.shift)?.hours || 0), 0);
+
+  document.getElementById("kpiUnchecked").textContent = unchecked.length;
+  document.getElementById("kpiUncheckedNote").innerHTML =
+    `<span>trên <b>${notifications.length}</b> thông báo trong ±7 ngày</span>`;
+
+  document.getElementById("kpiSupportToday").textContent = todayOpen.length;
+  document.getElementById("kpiSupportTodayNote").innerHTML =
+    `<span>chưa xử lý · tổng <b>${todaySupport.length}</b> yêu cầu hôm nay</span>`;
+
+  document.getElementById("kpiSupportWeek").textContent = weekOpen.length;
+  document.getElementById("kpiSupportWeekNote").innerHTML =
+    `<span>chưa xử lý · từ ngày mai đến ${shortDate(addDays(new Date(), 7))}</span>`;
+
+  document.getElementById("kpiShifts").textContent = weekShifts.length;
+  document.getElementById("kpiShiftsNote").innerHTML =
+    `<span><b>${people.size}</b> người · ${hours.toLocaleString("vi-VN")} giờ làm việc</span>`;
+}
+
+/* ---------- Thông báo ---------- */
+
+async function loadNotifications() {
+  try {
+    const json = await readJson(await fetch("/api/home/notifications", { cache: "no-store" }));
+    notifications = json.data || [];
+  } catch (error) {
+    notifications = [];
+    document.getElementById("notificationTasks").innerHTML =
+      `<li class="task-empty">Không tải được thông báo: ${escapeHtml(error.message)}</li>`;
+    return;
+  }
+
+  renderNotifications();
+}
+
+function setNotificationTab(tab) {
+  notificationTab = tab;
+  document.querySelectorAll('[data-tab="unchecked"], [data-tab="checked"]').forEach(button => {
+    button.classList.toggle("active", button.dataset.tab === tab);
+  });
+  renderNotifications();
+}
+
+const LEVEL_TEXT = {
+  danger: "Vấn đề bàn giao",
+  warning: "Yêu cầu kỹ thuật viên",
+  info: "Đăng ký phòng Lab"
+};
+
+function renderNotifications() {
+  const unchecked = notifications.filter(item => !item.checked);
+  const checked = notifications.filter(item => item.checked);
+
+  document.getElementById("tabUnchecked").textContent = unchecked.length;
+  document.getElementById("tabChecked").textContent = checked.length;
+  document.getElementById("checkAllButton").hidden = notificationTab !== "unchecked" || !unchecked.length;
+
+  // Ưu tiên: vấn đề bàn giao → yêu cầu kỹ thuật viên → đăng ký thường (giữ thứ tự thời gian)
+  const priority = { danger: 0, warning: 1, info: 2 };
+  const list = (notificationTab === "unchecked" ? unchecked : checked)
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => (priority[a.item.level] ?? 3) - (priority[b.item.level] ?? 3) || a.index - b.index)
+    .map(entry => entry.item);
+  const box = document.getElementById("notificationTasks");
+
+  if (!list.length) {
+    box.innerHTML = `<li class="task-empty">${notificationTab === "unchecked"
+      ? "Không còn thông báo nào cần kiểm tra."
+      : "Chưa có thông báo nào được đánh dấu đã kiểm tra."}</li>`;
+    renderKpis();
+    return;
+  }
+
+  box.innerHTML = list.map(item => `
+    <li class="task-item level-${escapeHtml(item.level || "info")}">
+      <div class="task-main">
+        <span class="task-type">${LEVEL_TEXT[item.level] || "Thông báo"}</span>
+        <b>${escapeHtml(item.message || item.title)}</b>
+        <small>${escapeHtml(item.id_key || "")}${item.date ? " · " + escapeHtml(item.date) : ""}</small>
+        ${item.checked ? `<small class="checked-note">${ICON_CHECK} Đã kiểm tra ${escapeHtml(item.checked_at)}${item.checked_by ? " · " + escapeHtml(item.checked_by) : ""}</small>` : ""}
+      </div>
+      ${item.checked ? "" : `
+        <button type="button" class="btn btn-outline btn-sm" onclick="checkItems(['${escapeHtml(item.notification_id)}'])">${ICON_CHECK} Đã kiểm tra</button>
+      `}
+    </li>
+  `).join("");
+
+  renderKpis();
+}
+
+async function checkItems(ids) {
+  try {
+    await readJson(await fetch("/api/home/check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids })
+    }));
+
+    await Promise.all([loadNotifications(), loadSupports()]);
+
+  } catch (error) {
+    vluAlert({ title: "Không lưu được", intro: error.message, tone: "danger" });
+  }
+}
+
+function checkAllNotifications() {
+  const ids = notifications.filter(item => !item.checked).map(item => item.notification_id);
+  if (!ids.length) return;
+  vluConfirm({
+    title: "Đánh dấu đã kiểm tra",
+    subtitle: "Thông báo hệ thống",
+    intro: "Hệ thống sẽ đánh dấu các thông báo sau là đã kiểm tra:",
+    rows: [
+      ["Số thông báo", `${ids.length} thông báo`],
+      ["Người kiểm tra", document.querySelector(".user-name b")?.textContent || ""]
+    ],
+    note: "Thông báo đã kiểm tra được chuyển sang thẻ “Đã kiểm tra”, có ghi lại thời gian và người kiểm tra.",
+    okText: "Đánh dấu tất cả",
+    cancelText: "Để sau"
+  }).then(ok => { if (ok) checkItems(ids); });
+}
+
+/* ---------- Yêu cầu hỗ trợ kỹ thuật ---------- */
+
+async function loadSupports() {
+  try {
+    const json = await readJson(await fetch("/api/home/support-requests", { cache: "no-store" }));
+    supports = json.data || [];
+  } catch (error) {
+    supports = [];
+    document.getElementById("supportList").innerHTML =
+      `<p class="task-empty">Không tải được yêu cầu hỗ trợ: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+
+  renderSupports();
+  renderSchedule();
+}
+
+function setSupportTab(tab) {
+  supportTab = tab;
+  document.querySelectorAll('[data-tab="upcoming"], [data-tab="past"]').forEach(button => {
+    button.classList.toggle("active", button.dataset.tab === tab);
+  });
+  renderSupports();
+}
+
+function renderSupports() {
+  const today = toISO(new Date());
+  const pastLimit = toISO(addDays(new Date(), -14));
+
+  const upcoming = supports.filter(item => item.date_iso >= today);
+  const past = supports.filter(item => item.date_iso < today && item.date_iso >= pastLimit).reverse();
+
+  document.getElementById("tabUpcoming").textContent = upcoming.filter(item => !item.checked).length;
+  document.getElementById("tabPast").textContent = past.length;
+
+  const list = supportTab === "upcoming" ? upcoming : past;
+  const box = document.getElementById("supportList");
+
+  if (!list.length) {
+    box.innerHTML = `<p class="task-empty">${supportTab === "upcoming"
+      ? "Không có yêu cầu hỗ trợ kỹ thuật sắp tới."
+      : "Không có yêu cầu hỗ trợ trong 14 ngày qua."}</p>`;
+    renderKpis();
+    return;
+  }
+
+  const byDate = new Map();
+  list.forEach(item => {
+    if (!byDate.has(item.date_iso)) byDate.set(item.date_iso, []);
+    byDate.get(item.date_iso).push(item);
+  });
+
+  box.innerHTML = [...byDate.entries()].map(([iso, items]) => `
+    <div class="support-day ${iso === today ? "is-today" : ""}">
+      <h4>${dayLabel(iso)} <span>${items.length} yêu cầu</span></h4>
+      <ul class="task-list">
+        ${items.map(item => `
+          <li class="task-item ${item.checked ? "is-done" : "level-warning"}">
+            <div class="support-slot">
+              <b>${escapeHtml(item.lab || "—")}</b>
+              <span>${escapeHtml(item.shift || "—")}</span>
+              <small>${shiftTime(item.shift)}</small>
+            </div>
+            <div class="task-main">
+              <b>${escapeHtml(item.name || "—")}${item.student_id ? ` <small>· ${escapeHtml(item.student_id)}</small>` : ""}</b>
+              <small>${escapeHtml(item.register_type)} · ${item.member_count} SV${item.purpose ? " · " + escapeHtml(item.purpose) : ""}</small>
+              <small class="mono">${escapeHtml(item.id_key)}</small>
+              ${item.checked ? `<small class="checked-note">${ICON_CHECK} Đã hỗ trợ ${escapeHtml(item.checked_at)}${item.checked_by ? " · " + escapeHtml(item.checked_by) : ""}</small>` : ""}
+            </div>
+            ${item.checked ? "" : `
+              <button type="button" class="btn btn-outline btn-sm" onclick="checkItems(['${escapeHtml(item.check_id)}'])">${ICON_CHECK} Đã hỗ trợ</button>
+            `}
+          </li>
+        `).join("")}
+      </ul>
+    </div>
+  `).join("");
+
+  renderKpis();
+}
+
+/* ---------- Lịch làm việc ---------- */
+
+async function loadSchedule() {
+  try {
+    const json = await readJson(await fetch("/api/staff-schedule", { cache: "no-store" }));
+    schedule = json.data || [];
+  } catch (error) {
+    schedule = [];
+    showBox("scheduleMessage", "Không tải được lịch làm việc: " + error.message, "error");
+  }
+
+  renderSchedule();
+  renderKpis();
+
+  document.getElementById("staffNames").innerHTML = [...new Set(schedule.map(item => item.name))]
+    .sort((a, b) => a.localeCompare(b, "vi"))
+    .map(name => `<option value="${escapeHtml(name)}">`)
+    .join("");
+}
+
+function changeScheduleWeek(step) {
+  scheduleWeekStart = addDays(scheduleWeekStart, step * 7);
+  renderSchedule();
+}
+
+function goToCurrentWeek() {
+  scheduleWeekStart = mondayOf(new Date());
+  renderSchedule();
+}
+
+function renderSchedule() {
+  const days = Array.from({ length: 6 }, (_, i) => addDays(scheduleWeekStart, i));
+  const firstIso = toISO(days[0]);
+  const lastIso = toISO(days[5]);
+  const today = toISO(new Date());
+
+  document.getElementById("scheduleWeekTitle").textContent =
+    `Tuần ${shortDate(days[0])} – ${shortDate(days[5])}/${days[5].getFullYear()}`;
+
+  const grid = document.getElementById("scheduleGrid");
+  let html = `<div class="sg-corner">Ca / Ngày</div>`;
+
+  days.forEach(day => {
+    const iso = toISO(day);
+    html += `<div class="sg-day ${iso === today ? "is-today" : ""}">${WEEKDAY_NAMES[day.getDay()]}<span>${shortDate(day)}</span></div>`;
+  });
+
+  HOME_SHIFTS.forEach(shift => {
+    html += `<div class="sg-shift"><b>${shift.name}</b><span>${shift.time}</span></div>`;
+
+    days.forEach(day => {
+      const iso = toISO(day);
+      const entries = schedule.filter(item => item.date_iso === iso && item.shift === shift.name);
+      const requests = supports.filter(item => item.date_iso === iso && item.shift === shift.name);
+      const labs = [...new Set(requests.map(item => item.lab))].sort();
+
+      html += `
+        <div class="sg-cell ${iso === today ? "is-today" : ""}" onclick="openScheduleModal('${iso}', '${shift.name}')" title="Thêm lịch cho ${shift.name}, ${shortDate(day)}">
+          ${requests.length ? `
+            <div class="support-chip" title="${requests.length} yêu cầu hỗ trợ kỹ thuật">
+              ${ICON_TOOL}<span>${requests.length} hỗ trợ KT · ${escapeHtml(labs.join(", "))}</span>
+            </div>` : ""}
+          ${entries.map(item => `
+            <div class="staff-chip ${roleClass(item.role)}"
+                 title="${escapeHtml(item.role)} · ${escapeHtml(item.lab)}${item.email ? " · " + escapeHtml(item.email) : ""}${item.note ? " · " + escapeHtml(item.note) : ""}${item.email_status ? " · Email: " + escapeHtml(item.email_status) + (item.email_sent_at ? " " + escapeHtml(item.email_sent_at) : "") : ""}"
+                 onclick="event.stopPropagation()">
+              <div>
+                <b>${escapeHtml(item.name)}</b>
+                <span>${escapeHtml(item.role)} · ${escapeHtml(item.lab)}</span>
+              </div>
+              <button type="button" aria-label="Hủy ca" title="Hủy ca" onclick="event.stopPropagation(); deleteSchedule('${escapeHtml(item.id)}', '${escapeHtml(item.name)}')">${ICON_CLOSE}</button>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    });
+  });
+
+  grid.innerHTML = html;
+
+  // Bảng tổng giờ trong tuần đang xem
+  const weekEntries = schedule.filter(item => item.date_iso >= firstIso && item.date_iso <= lastIso);
+  const people = new Map();
+
+  weekEntries.forEach(item => {
+    const key = `${item.name.toLowerCase()}|${item.role}`;
+    if (!people.has(key)) people.set(key, { name: item.name, role: item.role, entries: [] });
+    people.get(key).entries.push(item);
+  });
+
+  const rows = [...people.values()].sort((a, b) =>
+    a.role.localeCompare(b.role, "vi") || a.name.localeCompare(b.name, "vi")
+  );
+
+  const tbody = document.getElementById("hoursTableBody");
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-cell">Chưa có lịch làm việc trong tuần này. Nhấn “Thêm lịch làm việc” để thêm.</td></tr>`;
+    return;
+  }
+
+  const totalShifts = rows.reduce((sum, row) => sum + row.entries.length, 0);
+
+  tbody.innerHTML = rows.map(row => {
+    const hours = row.entries.reduce((sum, item) => sum + (HOME_SHIFTS.find(s => s.name === item.shift)?.hours || 0), 0);
+    const detail = row.entries
+      .sort((a, b) => (a.date_iso + a.shift).localeCompare(b.date_iso + b.shift))
+      .map(item => `${WEEKDAY_NAMES[fromISO(item.date_iso).getDay()]} ${item.shift.replace("Ca ", "C")}`)
+      .join(", ");
+
+    return `
+      <tr>
+        <td><b>${escapeHtml(row.name)}</b></td>
+        <td><span class="pill ${ROLE_PILL[row.role] || "pill-gray"}">${escapeHtml(row.role)}</span></td>
+        <td>${row.entries.length}</td>
+        <td><b>${hours.toLocaleString("vi-VN")} giờ</b></td>
+        <td class="hours-detail">${escapeHtml(detail)}</td>
+      </tr>
+    `;
+  }).join("") + `
+    <tr class="total-row">
+      <td colspan="2"><b>Tổng cộng</b></td>
+      <td><b>${totalShifts}</b></td>
+      <td><b>${(totalShifts * 2.5).toLocaleString("vi-VN")} giờ</b></td>
+      <td></td>
+    </tr>
+  `;
+}
+
+async function deleteSchedule(id, name) {
+  const item = schedule.find(entry => entry.id === id) || { name };
+  const shift = HOME_SHIFTS.find(s => s.name === item.shift);
+
+  const ok = await vluConfirm({
+    title: "Hủy ca làm việc",
+    subtitle: "Lịch làm việc tại phòng Lab",
+    intro: "Hệ thống sẽ hủy ca làm việc sau:",
+    rows: [
+      ["Người trực", item.name],
+      ["Vai trò", item.role],
+      ["Ngày", item.date_iso ? `${WEEKDAY_NAMES[fromISO(item.date_iso).getDay()]}, ${item.date}` : item.date],
+      ["Ca", shift ? `${item.shift} (${shift.time})` : item.shift],
+      ["Phòng Lab", item.lab],
+      ["Email", item.email]
+    ],
+    note: item.email
+      ? "Người trực sẽ nhận email báo hủy (nếu email phân công đã được gửi). Ca bị hủy vẫn được lưu lịch sử trong Google Sheet."
+      : "Ca bị hủy vẫn được lưu lịch sử trong Google Sheet.",
+    tone: "danger",
+    okText: "Hủy ca",
+    cancelText: "Giữ lại"
+  });
+
+  if (!ok) return;
+
+  try {
+    const json = await readJson(await fetch("/api/staff-schedule", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id })
+    }));
+
+    showBox("scheduleMessage", "", "");
+    vluAlert({
+      title: "Đã hủy ca làm việc",
+      subtitle: "Lịch làm việc tại phòng Lab",
+      intro: json.message || "Đã hủy ca làm việc.",
+      rows: [ ["Người trực", item.name], ["Ngày", item.date], ["Ca", item.shift], ["Phòng Lab", item.lab]],
+      tone: "success"
+    });
+    loadSchedule();
+
+  } catch (error) {
+    vluAlert({ title: "Không hủy được ca làm việc", intro: error.message, tone: "danger" });
+  }
+}
+
+/* ---------- Hộp thoại thêm lịch ---------- */
+
+function openScheduleModal(dateIso, shiftName) {
+  const form = document.getElementById("scheduleForm");
+  form.reset();
+  showBox("scheduleFormMessage", "", "");
+
+  document.getElementById("staffDate").value = dateIso || toISO(new Date());
+  document.querySelectorAll("#shiftChecks input").forEach(input => {
+    input.checked = shiftName ? input.value === shiftName : false;
+  });
+
+  document.getElementById("scheduleModal").hidden = false;
+  document.body.classList.add("modal-open");
+  document.getElementById("staffName").focus();
+}
+
+function closeScheduleModal() {
+  document.getElementById("scheduleModal").hidden = true;
+  document.body.classList.remove("modal-open");
+}
+
+function selectedShifts() {
+  return [...document.querySelectorAll("#shiftChecks input:checked")].map(input => input.value);
+}
+
+document.getElementById("shiftChecks").innerHTML = HOME_SHIFTS.map(shift => `
+  <label class="shift-check">
+    <input type="checkbox" value="${shift.name}">
+    <span><b>${shift.name}</b><small>${shift.time}</small></span>
+  </label>
+`).join("");
+
+// Chọn lại người đã từng trực -> tự điền email và vai trò gần nhất
+document.getElementById("staffName").addEventListener("change", () => {
+  const name = document.getElementById("staffName").value.trim().toLowerCase();
+  const last = [...schedule].reverse().find(item => item.name.toLowerCase() === name);
+  if (!last) return;
+  if (last.email && !document.getElementById("staffEmail").value) {
+    document.getElementById("staffEmail").value = last.email;
+  }
+  if (last.role) document.getElementById("staffRole").value = last.role;
+});
+
+document.getElementById("scheduleForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const payload = {
+    name: document.getElementById("staffName").value.trim(),
+    email: document.getElementById("staffEmail").value.trim(),
+    role: document.getElementById("staffRole").value,
+    lab: document.getElementById("staffLab").value,
+    date: document.getElementById("staffDate").value,
+    shifts: selectedShifts(),
+    repeat_until: document.getElementById("staffRepeat").value,
+    note: document.getElementById("staffNote").value.trim()
+  };
+
+  if (!payload.name) return showBox("scheduleFormMessage", "Vui lòng nhập họ tên.", "error");
+  if (payload.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payload.email)) {
+    return showBox("scheduleFormMessage", "Email không hợp lệ.", "error");
+  }
+  if (!payload.date) return showBox("scheduleFormMessage", "Vui lòng chọn ngày làm việc.", "error");
+  if (!payload.shifts.length) return showBox("scheduleFormMessage", "Vui lòng chọn ít nhất 1 ca.", "error");
+
+  const button = document.getElementById("scheduleSaveButton");
+  button.disabled = true;
+  showBox("scheduleFormMessage", "Đang lưu lịch...", "success");
+
+  try {
+    const json = await readJson(await fetch("/api/staff-schedule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }));
+
+    closeScheduleModal();
+    showBox("scheduleMessage", "", "");
+
+    const shiftText = payload.shifts
+      .map(name => `${name} (${HOME_SHIFTS.find(s => s.name === name).time})`)
+      .join(", ");
+
+    vluAlert({
+      title: json.added ? "Đã lưu lịch làm việc" : "Không có ca mới",
+      subtitle: "Lịch làm việc tại phòng Lab",
+      intro: "Hệ thống ghi nhận lịch làm việc như sau:",
+      rows: [
+        ["Người trực", payload.name],
+        ["Vai trò", payload.role],
+        ["Phòng Lab", payload.lab],
+        ["Bắt đầu", `${WEEKDAY_NAMES[fromISO(payload.date).getDay()]}, ${fromISO(payload.date).toLocaleDateString("vi-VN")}`],
+        ["Lặp lại đến", payload.repeat_until ? fromISO(payload.repeat_until).toLocaleDateString("vi-VN") : ""],
+        ["Ca", shiftText],
+        ["Số ca đã thêm", `${json.added} ca${json.skipped ? ` (bỏ qua ${json.skipped} ca đã có lịch)` : ""}`],
+        ["Email", payload.email]
+      ],
+      note: payload.email
+        ? "Email phân công sẽ được gửi tự động tới người trực trong ít phút."
+        : "Chưa nhập email nên hệ thống không gửi email phân công.",
+      tone: json.added ? "success" : "warning"
+    });
+    scheduleWeekStart = mondayOf(fromISO(payload.date));
+    await loadSchedule();
+
+  } catch (error) {
+    showBox("scheduleFormMessage", error.message, "error");
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeScheduleModal();
+});
+
+/* ---------- Chuông thông báo trên header ---------- */
+async function loadSystemNotifications() {
+  const countEl = document.getElementById("notificationCount");
+  const listEl = document.getElementById("notificationList");
+  const statusEl = document.getElementById("notificationStatus");
+
+  if (!countEl || !listEl) return;
+
+  try {
+    const res = await fetch("/api/notifications");
+    const json = await res.json();
+
+    if (!json.success) {
+      countEl.innerText = "0";
+
+      listEl.innerHTML = `
+        <p class="notification-empty">
+          Không thể tải thông báo
+        </p>
+      `;
+
+      if (statusEl) {
+        statusEl.innerText = "Lỗi";
+      }
+
+      return;
+    }
+
+    const data = json.data || [];
+
+    countEl.innerText = json.count || 0;
+
+    if (statusEl) {
+      statusEl.innerText = `${json.count || 0} thông báo`;
+    }
+
+    if (!data.length) {
+      listEl.innerHTML = `
+        <p class="notification-empty">
+          Chưa có thông báo mới
+        </p>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = data.map(item => {
+      const levelClass = getNotificationLevelClass(item.level);
+
+      return `
+        <div class="notification-item ${levelClass}">
+          <b>${escapeHtml(item.title || "Thông báo")}</b>
+          <p>${escapeHtml(item.message || "")}</p>
+          <small>${escapeHtml(item.id_key || "")}</small>
+        </div>
+      `;
+    }).join("");
+
+  } catch (error) {
+    console.error("LOAD NOTIFICATIONS ERROR:", error);
+
+    countEl.innerText = "0";
+
+    listEl.innerHTML = `
+      <p class="notification-empty">
+        Lỗi kết nối thông báo
+      </p>
+    `;
+
+    if (statusEl) {
+      statusEl.innerText = "Lỗi";
+    }
+  }
+}
+
+function toggleNotificationPanel(event) {
+  if (event) {
+    event.stopPropagation();
+  }
+
+  const panel = document.getElementById("notificationPanel");
+
+  if (panel) {
+    panel.classList.toggle("show");
+  }
+}
+
+function getNotificationLevelClass(level) {
+  if (level === "danger") return "notification-danger";
+  if (level === "warning") return "notification-warning";
+  return "notification-info";
+}
+
+document.addEventListener("click", function (event) {
+  const wrapper = document.querySelector(".bell-wrapper");
+  const panel = document.getElementById("notificationPanel");
+
+  if (!wrapper || !panel) return;
+
+  if (!wrapper.contains(event.target)) {
+    panel.classList.remove("show");
+  }
+});
+
+loadSystemNotifications();
+setInterval(loadSystemNotifications, 60000);
+
+
+/* ---------- Khởi tạo ---------- */
+loadNotifications();
+loadSupports();
+loadSchedule();
+</script>
+{% endblock %}
