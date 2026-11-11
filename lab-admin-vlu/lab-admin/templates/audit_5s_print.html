@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phiếu chấm 5S {{ audit.id }} | Lab 1 - VLU</title>
+  <style>
+    @page { size: A4; margin: 12mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "IBM Plex Sans", Arial, sans-serif; font-size: 12px; color: #1d1d1f; background: #f4f4f6; }
+    .sheet { max-width: 210mm; margin: 16px auto; padding: 14mm 12mm; background: #fff; box-shadow: 0 6px 24px rgba(0,0,0,.08); }
+    .toolbar { max-width: 210mm; margin: 16px auto 0; display: flex; gap: 8px; justify-content: flex-end; }
+    .toolbar button, .toolbar a { padding: 8px 14px; border-radius: 8px; border: 1px solid #d72134; background: #d72134; color: #fff; font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; }
+    .toolbar a { background: #fff; color: #d72134; }
+    header { display: flex; justify-content: space-between; gap: 12px; border-bottom: 3px solid #1b2128; padding-bottom: 8px; margin-bottom: 10px; }
+    header small { display: block; color: #a26a00; font-weight: 700; letter-spacing: .04em; }
+    header h1 { margin: 2px 0 0; font-size: 20px; }
+    header .meta { text-align: right; color: #3a3a3f; }
+    .info { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 16px; margin-bottom: 10px; }
+    .info div span { color: #6e6e76; }
+    table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; }
+    th, td { border: 1px solid #c3c6ca; padding: 4px 6px; vertical-align: top; }
+    th { background: #f2f2f4; text-align: left; }
+    td.num, th.num { text-align: center; width: 54px; }
+    .score { font-weight: 700; font-size: 14px; }
+    .low { background: #fdeef0; }
+    .crit { color: #3a3a3f; font-size: 11px; }
+    h2 { font-size: 13px; margin: 12px 0 4px; text-transform: uppercase; }
+    .result { display: flex; gap: 18px; flex-wrap: wrap; padding: 8px 10px; border: 1px solid #c3c6ca; background: #fafafb; }
+    .result b { font-size: 15px; }
+    .sign { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
+    .sign div { border: 1px solid #c3c6ca; padding: 8px; min-height: 70px; }
+    .sign span { color: #6e6e76; display: block; }
+    .note { color: #6e6e76; font-size: 11px; }
+    @media print {
+      body { background: #fff; }
+      .toolbar { display: none; }
+      .sheet { margin: 0; padding: 0; box-shadow: none; max-width: none; }
+      tr { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <a href="/danh-gia-5s?id={{ audit.id }}">Về hệ thống</a>
+    <button type="button" onclick="window.print()">In / lưu PDF</button>
+  </div>
+
+  <main class="sheet">
+    <header>
+      <div>
+        <small>QUY TRÌNH THAO TÁC CHUẨN · SOP-05</small>
+        <h1>PHIẾU CHẤM ĐIỂM 5S – {{ audit.lab }}</h1>
+      </div>
+      <div class="meta">
+        <div><b>{{ audit.id }}</b></div>
+        <div>In từ hệ thống quản lý phòng Lab</div>
+      </div>
+    </header>
+
+    <div class="info">
+      <div><span>Ngày chấm:</span> <b>{{ audit.date }}</b></div>
+      <div><span>Loại:</span> KTV tự đánh giá định kỳ</div>
+      <div><span>Giờ:</span> {{ audit.start or '…' }} – {{ audit.end or '…' }}</div>
+      <div><span>Người chấm:</span> {{ audit.auditor }}</div>
+      <div><span>Kỳ dữ liệu:</span> {{ audit.period_from }} → {{ audit.period_to }}</div>
+      <div><span>Trạng thái:</span> {{ audit.status }}</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Khu</th>
+          {% for item in five_s %}<th class="num">{{ item.s }}<br><small>{{ item.name }}</small></th>{% endfor %}
+          <th class="num">Khu (%)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for zone in zones %}
+        <tr>
+          <th>{{ zone.zone }} – {{ zone.name }}</th>
+          {% for item in five_s %}
+            {% set cell = cells[zone.zone ~ '-' ~ item.s] %}
+            <td class="num score {{ 'low' if cell.score in ['0','1','2'] }}">{{ cell.score or '' }}</td>
+          {% endfor %}
+          <td class="num">{{ audit.by_zone[zone.zone] if audit.by_zone[zone.zone] is not none else '—' }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <th>Theo S (%)</th>
+          {% for item in five_s %}<td class="num">{{ audit.by_s[item.s] if audit.by_s[item.s] is not none else '—' }}</td>{% endfor %}
+          <td class="num"><b>{{ audit.percent if audit.percent is not none else '—' }}</b></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="result">
+      <div>Tổng điểm: <b>{{ audit.total }}</b></div>
+      <div>Số ô chấm bằng số: <b>{{ audit.scored }}</b> (KAD: {{ audit.kad }})</div>
+      <div>Điểm 5S = {{ audit.total }} ÷ ({{ audit.scored }} × 4) × 100 = <b>{{ audit.percent if audit.percent is not none else '—' }}%</b></div>
+      <div>Xếp loại: <b>{{ audit.rating }}</b></div>
+    </div>
+
+    <h2>Chi tiết tiêu chí và bằng chứng</h2>
+    <table>
+      <thead><tr><th>Ô</th><th>Tiêu chí</th><th class="num">Điểm</th><th>Ghi chú / minh chứng</th></tr></thead>
+      <tbody>
+        {% for zone in zones %}{% for item in five_s %}
+          {% set cell = cells[zone.zone ~ '-' ~ item.s] %}
+          <tr class="{{ 'low' if cell.score in ['0','1','2'] }}">
+            <td>{{ cell.code }}</td>
+            <td class="crit">{{ cell.criterion }}{% if cell.system_evidence %}<br><i>Hệ thống: {{ cell.system_evidence }}</i>{% endif %}</td>
+            <td class="num score">{{ cell.score }}</td>
+            <td>{{ cell.kad_reason or cell.note }}{% if cell.evidence %}<br><small>Minh chứng: {{ cell.evidence }}</small>{% endif %}</td>
+          </tr>
+        {% endfor %}{% endfor %}
+      </tbody>
+    </table>
+
+    {% if kad_cells %}
+    <h2>Lý do các ô KAD</h2>
+    <p>{% for cell in kad_cells %}<b>{{ cell.code }}</b>: {{ cell.kad_reason }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+    {% endif %}
+
+    <h2>Việc cần khắc phục (ô ≤ 2) – bảng KHAC_PHUC</h2>
+    <table>
+      <thead><tr><th>Mã</th><th>Mã lỗi</th><th>Vấn đề</th><th>Việc cần làm</th><th>Phụ trách</th><th>Hạn</th><th>Trạng thái</th></tr></thead>
+      <tbody>
+        {% for action in actions %}
+        <tr><td>{{ action.id }}</td><td>{{ action.code }}</td><td>{{ action.problem }}</td><td>{{ action.todo }}</td><td>{{ action.owner }}</td><td>{{ action.due }}</td><td>{{ action.status }}{% if action.confirmed_at %}<br><small>{{ action.confirmed_by }} {{ action.confirmed_at }}</small>{% endif %}</td></tr>
+        {% else %}
+        <tr><td colspan="7">Không có ô ≤ 2.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="sign">
+      <div><span>Người chấm</span><b>{{ audit.auditor }}</b><br>{{ audit.date }}</div>
+      <div><span>GV phụ trách xác nhận (trên hệ thống)</span>
+        {% if audit.confirmed_by %}<b>{{ audit.confirmed_by }}</b><br>{{ audit.confirmed_at }}{% else %}Chưa xác nhận{% endif %}
+      </div>
+    </div>
+    <p class="note">Mốc xếp loại: ≥ 85% Tốt · 70 – &lt; 85% Đạt · &lt; 70% Cần cải thiện. Phiếu được tạo và lưu trên hệ thống (DANH_GIA_5S, KHAC_PHUC); bản in dùng để lưu hồ sơ.</p>
+  </main>
+</body>
+</html>
