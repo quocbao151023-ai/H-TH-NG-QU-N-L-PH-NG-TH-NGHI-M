@@ -1,0 +1,5 @@
+Flask
+gspread
+google-auth
+openpyxl
+gunicorn>=22.0

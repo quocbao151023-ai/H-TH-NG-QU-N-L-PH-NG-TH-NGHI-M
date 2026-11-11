@@ -1,0 +1,1202 @@
+{% extends "base.html" %}
+{% set active_page = "audit" %}
+{% set page_title = "Đánh giá 5S định kỳ" %}
+{% set page_desc = "SOP-05: KTV tự đánh giá 30 tiêu chí (6 khu × 5S) 2 tuần / 1 lần trên hệ thống, đối chiếu dữ liệu bàn giao, sự cố, vật tư; ô từ 2 điểm trở xuống tự thành việc khắc phục." %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='pages.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- THỐNG KÊ -->
+<section class="stat-grid">
+  <div class="stat-card tone-blue">
+    <div class="stat-top">
+      <p class="stat-label">Điểm 5S gần nhất</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.75 3h-4.5C14.56 3 14 3.56 14 4.25V7.5H9.75c-.69 0-1.25.56-1.25 1.25v3.75H4.25c-.69 0-1.25.56-1.25 1.25V21h18V4.25C21 3.56 20.44 3 19.75 3ZM8.5 19.5h-4V14h4v5.5Zm5.5 0h-4V9h4v10.5Zm5.5 0h-4v-15h4v15Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statLast">--</h3>
+    <div class="stat-foot" id="statLastNote">&nbsp;</div>
+  </div>
+
+  <div class="stat-card tone-amber">
+    <div class="stat-top">
+      <p class="stat-label">Lần chấm tiếp theo</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 22C6.485 22 2 17.515 2 12S6.485 2 12 2s10 4.485 10 10-4.485 10-10 10Zm0-18.5c-4.685 0-8.5 3.815-8.5 8.5 0 4.685 3.815 8.5 8.5 8.5 4.685 0 8.5-3.815 8.5-8.5 0-4.685-3.815-8.5-8.5-8.5Zm.75 3.5v4.69l3.03 3.03-1.06 1.06-3.47-3.47V7h1.5Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statDue">--</h3>
+    <div class="stat-foot" id="statDueNote">SOP-05: KTV chấm 2 tuần / 1 lần</div>
+  </div>
+
+  <div class="stat-card tone-red">
+    <div class="stat-top">
+      <p class="stat-label">Việc khắc phục đang mở</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M2.86 21c-.45 0-.855-.235-1.08-.625a1.23 1.23 0 0 1 0-1.25L10.915 3.14a1.25 1.25 0 0 1 2.17 0l9.14 15.99c.225.39.22.86 0 1.25-.225.39-.63.625-1.08.625L21.14 21H2.86Zm.435-1.5H20.71L12 4.26 3.29 19.5h.005Zm9.455-5V9h-1.5v5.5h1.5ZM13 17a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statActions">0</h3>
+    <div class="stat-foot" id="statActionsNote">&nbsp;</div>
+  </div>
+
+  <div class="stat-card tone-green">
+    <div class="stat-top">
+      <p class="stat-label">Phiếu chờ GV xác nhận</p>
+      <span class="stat-icon"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M2 12c0 5.515 4.485 10 10 10s10-4.485 10-10S17.515 2 12 2 2 6.485 2 12Zm1.5 0c0-4.685 3.815-8.5 8.5-8.5 4.685 0 8.5 3.815 8.5 8.5 0 4.685-3.815 8.5-8.5 8.5-4.685 0-8.5-3.815-8.5-8.5Zm6.115 3.175c.245.245.565.365.885.365.32 0 .64-.12.885-.365L17.28 9.28l-1.06-1.06-5.72 5.72-2.22-2.22-1.06 1.06 2.395 2.395Z" fill="currentColor"/></svg></span>
+    </div>
+    <h3 class="stat-value" id="statConfirm">0</h3>
+    <div class="stat-foot">SOP-05 bước 8: GV phụ trách xác nhận trên hệ thống</div>
+  </div>
+</section>
+
+<div class="panel-tabs page-tabs" role="tablist">
+  <button type="button" role="tab" data-tab="phieu" onclick="setPageTab('phieu')">Phiếu đánh giá <b id="tabAuditCount">0</b></button>
+  <button type="button" role="tab" data-tab="khac-phuc" onclick="setPageTab('khac-phuc')">Khắc phục <b id="tabActionCount">0</b></button>
+  <button type="button" role="tab" data-tab="so-sanh" onclick="setPageTab('so-sanh')">Xu hướng</button>
+</div>
+
+<!-- =========================== PHIẾU ĐÁNH GIÁ =========================== -->
+<div class="page-tab-panel" id="panel-phieu" role="tabpanel">
+
+  <section class="card card-pad" id="auditListCard">
+    <div class="card-head">
+      <h3 class="section-title">Phiếu đánh giá 5S – Lab 1</h3>
+      <div class="card-head-actions">
+        {% if is_admin %}
+        <button type="button" class="btn btn-red btn-sm" onclick="newAudit()"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.25h-7.25V4h-1.5v7.25H4v1.5h7.25V20h1.5v-7.25H20v-1.5Z" fill="currentColor"/></svg> Chấm 5S mới</button>
+        {% endif %}
+      </div>
+    </div>
+
+    <p class="notice-bar">
+      <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 22C6.485 22 2 17.515 2 12S6.485 2 12 2s10 4.485 10 10-4.485 10-10 10Zm0-18.5c-4.685 0-8.5 3.815-8.5 8.5 0 4.685 3.815 8.5 8.5 8.5 4.685 0 8.5-3.815 8.5-8.5 0-4.685-3.815-8.5-8.5-8.5Zm.75 10V8h-1.5v5.5h1.5ZM13 16a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" fill="currentColor"/></svg>
+      <span>Đi A → F, chấm từng ô 0 – 4 hoặc KAD. Cạnh mỗi tiêu chí là <b>dữ liệu hệ thống</b> trong kỳ (bàn giao cuối ca, sự cố, kiểm kê, mượn – trả, điểm lần trước) để đối chiếu – điểm vẫn do người chấm quyết định theo hiện trạng. Chốt phiếu: ô ≤ 2 tự thành việc khắc phục.</span>
+    </p>
+
+    <div class="table-wrap">
+      <table class="ops-table">
+        <thead>
+          <tr>
+            <th>Mã phiếu</th>
+            <th>Ngày chấm</th>
+            <th>Người chấm</th>
+            <th class="num">Điểm 5S</th>
+            <th>Xếp loại</th>
+            <th>Trạng thái</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="auditTableBody">
+          <tr><td colspan="7" class="empty-cell">Đang tải dữ liệu...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- PHIẾU CHẤM -->
+  <section class="card card-pad audit-editor" id="auditEditor" hidden>
+    <div class="card-head">
+      <div>
+        <h3 class="section-title" id="editorTitle">Phiếu chấm 5S</h3>
+        <p class="card-note" id="editorSub"></p>
+      </div>
+      <div class="card-head-actions">
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeEditor()">Đóng phiếu</button>
+      </div>
+    </div>
+
+    <div class="audit-meta">
+      <div class="field">
+        <label for="auditDate">Ngày chấm</label>
+        <input type="date" id="auditDate" class="input">
+      </div>
+      <div class="field">
+        <label for="auditStart">Giờ bắt đầu</label>
+        <input type="time" id="auditStart" class="input">
+      </div>
+      <div class="field">
+        <label for="auditEnd">Giờ kết thúc</label>
+        <input type="time" id="auditEnd" class="input">
+      </div>
+      <div class="field">
+        <label for="auditAuditor">Người chấm</label>
+        <input type="text" id="auditAuditor" class="input" maxlength="80">
+      </div>
+      <div class="field audit-period">
+        <label>Kỳ dữ liệu đối chiếu</label>
+        <div class="period-row">
+          <input type="date" id="periodFrom" class="input" aria-label="Từ ngày">
+          <span>→</span>
+          <input type="date" id="periodTo" class="input" aria-label="Đến ngày">
+          <button type="button" class="btn btn-outline btn-sm" id="reloadEvidence" onclick="loadEvidence()">Tải lại</button>
+        </div>
+        <p class="field-hint">Mặc định: từ lần chấm trước đến ngày chấm</p>
+      </div>
+    </div>
+
+    <nav class="zone-nav" id="zoneNav" aria-label="Chuyển khu"></nav>
+    <div id="zoneCards"></div>
+
+    <div class="field audit-note-field">
+      <label for="auditNote">Ghi chú chung</label>
+      <textarea id="auditNote" class="input" maxlength="500" placeholder="Bối cảnh đợt chấm, điều kiện đặc biệt…"></textarea>
+    </div>
+
+    <div class="audit-actions-created" id="editorActions" hidden></div>
+
+    <div class="audit-bar" id="auditBar">
+      <div class="audit-bar-score">
+        <b id="barPercent">--</b>
+        <span id="barRating"></span>
+      </div>
+      <div class="audit-bar-progress">
+        <span id="barProgress">0/30 ô</span>
+        <div class="bar-s" id="barS"></div>
+      </div>
+      <div class="audit-bar-buttons" id="barButtons"></div>
+    </div>
+    <div class="message" id="auditMessage"></div>
+  </section>
+</div>
+
+<!-- =========================== KHẮC PHỤC =========================== -->
+<div class="page-tab-panel" id="panel-khac-phuc" role="tabpanel" hidden>
+
+  <section class="card card-pad repeat-card" id="repeatCard" hidden>
+    <div class="card-head">
+      <h3 class="section-title">Lỗi lặp lại khi bàn giao</h3>
+      <span class="card-note" id="repeatNote"></span>
+    </div>
+    <div class="repeat-list" id="repeatList"></div>
+  </section>
+
+  <section class="card filter-bar actions-filter">
+    <div class="field search-field">
+      <label for="actionSearch">Tìm kiếm</label>
+      <div class="search-box">
+        <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m21.78 20.72-5.62-5.62A7.96 7.96 0 0 0 18 10c0-4.41-3.59-8-8-8s-8 3.59-8 8 3.59 8 8 8a7.96 7.96 0 0 0 5.1-1.84l5.62 5.62 1.06-1.06ZM10 16.5A6.506 6.506 0 0 1 3.5 10c0-3.585 2.915-6.5 6.5-6.5s6.5 2.915 6.5 6.5-2.915 6.5-6.5 6.5Z" fill="currentColor"/></svg>
+        <input type="search" id="actionSearch" placeholder="Mã, mã lỗi (B-S2), vấn đề, người phụ trách" autocomplete="off">
+      </div>
+    </div>
+    <div class="field">
+      <label for="actionStatus">Trạng thái</label>
+      <select id="actionStatus">
+        <option value="mo">Chưa xong</option>
+        <option value="qua-han">Quá hạn</option>
+        <option value="">Tất cả</option>
+        <option value="Đã khắc phục">Đã khắc phục</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="actionSource">Nguồn</label>
+      <select id="actionSource"><option value="">Tất cả nguồn</option></select>
+    </div>
+    <button class="export-btn" type="button" onclick="exportActions()">
+      <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.885 16.675a1.245 1.245 0 0 1-.885.365c-.32 0-.64-.12-.885-.365L6.47 12.03l1.06-1.06 3.72 3.72V3h1.5v11.69l3.72-3.72 1.06 1.06-4.645 4.645ZM19.5 18.25V15.5H21v2.75A2.755 2.755 0 0 1 18.25 21H5.75A2.755 2.755 0 0 1 3 18.25V15.5h1.5v2.75c0 .69.56 1.25 1.25 1.25h12.5c.69 0 1.25-.56 1.25-1.25Z" fill="currentColor"/></svg> Xuất Excel
+    </button>
+  </section>
+
+  <section class="card card-pad">
+    <div class="card-head">
+      <h3 class="section-title">Việc khắc phục (KHAC_PHUC)</h3>
+      <div class="card-head-actions">
+        {% if is_admin %}
+        <button type="button" class="btn btn-red btn-sm" onclick="openActionAdd()"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.25h-7.25V4h-1.5v7.25H4v1.5h7.25V20h1.5v-7.25H20v-1.5Z" fill="currentColor"/></svg> Thêm việc</button>
+        {% endif %}
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="ops-table">
+        <thead>
+          <tr>
+            <th>Mã · nguồn</th>
+            <th>Mã lỗi</th>
+            <th>Vấn đề</th>
+            <th>Việc cần làm</th>
+            <th>Phụ trách · hạn</th>
+            <th>Trạng thái</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="actionTableBody">
+          <tr><td colspan="7" class="empty-cell">Đang tải dữ liệu...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- =========================== SO SÁNH =========================== -->
+<div class="page-tab-panel" id="panel-so-sanh" role="tabpanel" hidden>
+  <section class="card card-pad">
+    <div class="card-head">
+      <h3 class="section-title">Xu hướng các lần chấm gần nhất</h3>
+      <span class="card-note">Tối đa 4 phiếu đã chốt gần nhất · Điểm 5S (%) = tổng điểm ÷ (4 × số ô chấm) × 100</span>
+    </div>
+    <div id="compareBody"><div class="empty-box">Đang tải dữ liệu...</div></div>
+  </section>
+</div>
+
+<!-- HỘP THOẠI: THÊM VIỆC KHẮC PHỤC -->
+<div class="vlu-modal" id="actionAddModal" hidden onclick="if (event.target === this) closeModal('actionAddModal')">
+  <form class="vlu-modal-dialog modal-lg" id="actionAddForm" role="dialog" aria-modal="true" aria-labelledby="actionAddTitle" novalidate>
+    <div class="vlu-modal-head">
+      <div>
+        <h3 id="actionAddTitle">Thêm việc khắc phục</h3>
+        <p id="actionAddSub">Lỗi lặp lại khi bàn giao hoặc KTV tự ghi nhận – cùng danh sách với việc từ phiếu chấm.</p>
+      </div>
+      <button type="button" class="vlu-modal-close" onclick="closeModal('actionAddModal')" aria-label="Đóng"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m20.28 4.78-1.06-1.06L12 10.94 4.78 3.72 3.72 4.78 10.94 12l-7.22 7.22 1.06 1.06L12 13.06l7.22 7.22 1.06-1.06L13.06 12l7.22-7.22Z" fill="currentColor"/></svg></button>
+    </div>
+    <div class="vlu-modal-body schedule-form">
+      <input type="hidden" id="addSource">
+      <input type="hidden" id="addSourceId">
+      <div class="form-row">
+        <div class="field">
+          <label for="addZone">Khu</label>
+          <select id="addZone"></select>
+        </div>
+        <div class="field">
+          <label for="addS">S</label>
+          <select id="addS"></select>
+        </div>
+      </div>
+      <p class="field-hint" id="addCriterion"></p>
+      <div class="field">
+        <label for="addProblem">Vấn đề <b>*</b></label>
+        <textarea id="addProblem" class="input" maxlength="300"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="addTodo">Việc cần làm</label>
+          <input id="addTodo" class="input" maxlength="300">
+        </div>
+        <div class="field">
+          <label for="addEvidence">Mã ảnh / link minh chứng</label>
+          <input id="addEvidence" class="input" maxlength="300">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="addOwner">Người phụ trách</label>
+          <input id="addOwner" class="input" maxlength="80">
+        </div>
+        <div class="field">
+          <label for="addDue">Hạn <b>*</b></label>
+          <input id="addDue" class="input" type="date">
+        </div>
+      </div>
+      <div class="field">
+        <label for="addIncident">Sự cố liên quan (SOP-04)</label>
+        <select id="addIncident"></select>
+      </div>
+      <div class="message" id="addMessage"></div>
+    </div>
+    <div class="vlu-modal-foot">
+      <button type="button" class="btn btn-outline" onclick="closeModal('actionAddModal')">Hủy</button>
+      <button type="submit" class="btn btn-red" id="addSave">Thêm việc</button>
+    </div>
+  </form>
+</div>
+
+<!-- HỘP THOẠI: CẬP NHẬT VIỆC KHẮC PHỤC -->
+<div class="vlu-modal" id="actionModal" hidden onclick="if (event.target === this) closeModal('actionModal')">
+  <form class="vlu-modal-dialog modal-lg" id="actionForm" role="dialog" aria-modal="true" aria-labelledby="actionTitle" novalidate>
+    <div class="vlu-modal-head">
+      <div>
+        <h3 id="actionTitle">Cập nhật việc khắc phục</h3>
+        <p id="actionSub"></p>
+      </div>
+      <button type="button" class="vlu-modal-close" onclick="closeModal('actionModal')" aria-label="Đóng"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m20.28 4.78-1.06-1.06L12 10.94 4.78 3.72 3.72 4.78 10.94 12l-7.22 7.22 1.06 1.06L12 13.06l7.22 7.22 1.06-1.06L13.06 12l7.22-7.22Z" fill="currentColor"/></svg></button>
+    </div>
+    <div class="vlu-modal-body schedule-form">
+      <input type="hidden" id="actionId">
+      <div class="info-grid" id="actionInfo"></div>
+      <div class="field">
+        <label>Trạng thái</label>
+        <div class="choice-grid cols-3">
+          <label class="choice"><input type="radio" name="actionStatus" value="Chưa xử lý"><span><b>Chưa xử lý</b><small>Đã giao, chưa làm</small></span></label>
+          <label class="choice tone-amber"><input type="radio" name="actionStatus" value="Đang xử lý"><span><b>Đang xử lý</b><small>Đang làm</small></span></label>
+          <label class="choice tone-green"><input type="radio" name="actionStatus" value="Đã khắc phục"><span><b>Đã khắc phục</b><small>KTV xác nhận</small></span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label for="actionTodo">Việc cần làm</label>
+        <input id="actionTodo" class="input" maxlength="300">
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="actionOwner">Người phụ trách</label>
+          <input id="actionOwner" class="input" maxlength="80">
+        </div>
+        <div class="field">
+          <label for="actionDue">Hạn</label>
+          <input id="actionDue" class="input" type="date">
+        </div>
+      </div>
+      <div class="field">
+        <label for="actionIncident">Sự cố liên quan (SOP-04)</label>
+        <select id="actionIncident"></select>
+      </div>
+      <div class="field">
+        <label for="actionResult">Kết quả khắc phục <small>(bắt buộc khi Đã khắc phục)</small></label>
+        <textarea id="actionResult" class="input" maxlength="300" placeholder="Đã làm gì; mã ảnh sau khắc phục"></textarea>
+      </div>
+      <div class="message" id="actionMessage"></div>
+    </div>
+    <div class="vlu-modal-foot">
+      <button type="button" class="btn btn-outline" onclick="closeModal('actionModal')">Hủy</button>
+      <button type="submit" class="btn btn-red" id="actionSave">Lưu</button>
+    </div>
+  </form>
+</div>
+
+<!-- HỘP THOẠI: GV XÁC NHẬN -->
+<div class="vlu-modal" id="confirmModal" hidden onclick="if (event.target === this) closeModal('confirmModal')">
+  <form class="vlu-modal-dialog" id="confirmForm" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" novalidate>
+    <div class="vlu-modal-head">
+      <div>
+        <h3 id="confirmTitle">Xác nhận phiếu đánh giá</h3>
+        <p>Thay chữ ký GV phụ trách trên phiếu giấy (SOP-05 bước 8).</p>
+      </div>
+      <button type="button" class="vlu-modal-close" onclick="closeModal('confirmModal')" aria-label="Đóng"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="m20.28 4.78-1.06-1.06L12 10.94 4.78 3.72 3.72 4.78 10.94 12l-7.22 7.22 1.06 1.06L12 13.06l7.22 7.22 1.06-1.06L13.06 12l7.22-7.22Z" fill="currentColor"/></svg></button>
+    </div>
+    <div class="vlu-modal-body schedule-form">
+      <input type="hidden" id="confirmId">
+      <div class="info-grid" id="confirmInfo"></div>
+      <div class="field">
+        <label for="confirmName">Giảng viên xác nhận</label>
+        <input id="confirmName" class="input" maxlength="80">
+        <p class="field-hint">{{ 'KTV ghi tên GV đã duyệt phiếu.' if is_admin else 'Ghi họ tên của thầy / cô.' }}</p>
+      </div>
+      <div class="message" id="confirmMessage"></div>
+    </div>
+    <div class="vlu-modal-foot">
+      <button type="button" class="btn btn-outline" onclick="closeModal('confirmModal')">Hủy</button>
+      <button type="submit" class="btn btn-red" id="confirmSave">Xác nhận</button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='lab-ops.js') }}"></script>
+<script>
+/* =========================================================
+   ĐÁNH GIÁ 5S ĐỊNH KỲ (SOP-05)
+   Phiếu chấm 30 ô -> bằng chứng hệ thống từng ô -> chốt -> việc khắc phục -> GV xác nhận
+   -> xu hướng các lần chấm (cũng hiện ở trang Hiệu suất).
+   Đánh giá T0 / T1 / T2 do nhóm nghiên cứu chấm tay trong thời gian chạy thử, không nhập vào hệ thống.
+========================================================= */
+
+const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
+let config = null;
+let audits = [];
+let actions = [];
+let incidents = [];
+let repeats = [];
+let editor = null;      // { id, status, cells: {code: {...}}, evidence: {} }
+
+const SCORE_TEXT = {
+  "0": "Không đạt", "1": "Kém", "2": "Trung bình", "3": "Khá", "4": "Tốt", "KAD": "Không áp dụng"
+};
+const RATING_TONE = { "Tốt": "pill-green", "Đạt": "pill-blue", "Cần cải thiện": "pill-red" };
+
+const pct = value => value === null || value === undefined || value === "" ? "--" : `${String(value).replace(".", ",")}%`;
+const sName = code => (config.five_s.find(item => item.s === code) || {}).name || code;
+const zoneOf = code => config.zones.find(zone => zone.zone === code) || { name: code, criteria: {} };
+
+function statusPill(status) {
+  if (status === "GV đã xác nhận") return `<span class="pill pill-green">GV đã xác nhận</span>`;
+  if (status === "Đã chốt") return `<span class="pill pill-amber">Đã chốt · chờ GV</span>`;
+  return `<span class="pill pill-gray">Nháp</span>`;
+}
+
+function ratingPill(rating) {
+  return rating ? `<span class="pill ${RATING_TONE[rating] || "pill-gray"}">${escapeHtml(rating)}</span>` : `<span class="muted-text">—</span>`;
+}
+
+/* ---------- Tải dữ liệu ---------- */
+
+async function loadConfig() {
+  config = await readJson(await fetch("/api/5s/config", { cache: "no-store" }));
+  document.getElementById("addZone").innerHTML = config.zones.map(zone => `<option value="${zone.zone}">${zone.zone} – ${escapeHtml(zone.name)}</option>`).join("");
+  document.getElementById("addS").innerHTML = config.five_s.map(item => `<option value="${item.s}">${item.s} ${escapeHtml(item.name)}</option>`).join("");
+  document.getElementById("actionSource").innerHTML = `<option value="">Tất cả nguồn</option>` +
+    config.action_sources.map(source => `<option value="${escapeHtml(source)}">${escapeHtml(source)}</option>`).join("");
+}
+
+async function loadAudits() {
+  try {
+    const json = await readJson(await fetch("/api/5s/audits", { cache: "no-store" }));
+    audits = json.data || [];
+    renderAudits(json);
+  } catch (error) {
+    setHtml("auditTableBody", `<tr><td colspan="8" class="empty-cell">Không tải được phiếu đánh giá: ${escapeHtml(error.message)}</td></tr>`);
+  }
+}
+
+async function loadActions() {
+  try {
+    const json = await readJson(await fetch("/api/5s/actions", { cache: "no-store" }));
+    actions = json.data || [];
+    incidents = json.incidents || [];
+    repeats = json.repeats || [];
+    renderRepeats(json);
+    applyActionFilter();
+  } catch (error) {
+    setHtml("actionTableBody", `<tr><td colspan="7" class="empty-cell">Không tải được việc khắc phục: ${escapeHtml(error.message)}</td></tr>`);
+  }
+}
+
+/* ---------- Danh sách phiếu ---------- */
+
+function renderAudits(json) {
+  setText("tabAuditCount", audits.length);
+  const last = json.last;
+  setHtml("statLast", last ? pct(last.percent) : "--");
+  setHtml("statLastNote", last ? `${ratingPill(last.rating)} <span>Chấm ngày ${escapeHtml(last.date)}</span>` : "<span>Chưa có phiếu đã chốt</span>");
+
+  if (json.due) {
+    setHtml("statDue", `Đến hạn`);
+    setHtml("statDueNote", last ? `<span>Lần trước cách đây <b>${json.days_since_last}</b> ngày</span>` : "<span>Chưa có phiếu nào đã chốt</span>");
+  } else {
+    const left = config.due_days - (json.days_since_last || 0);
+    setHtml("statDue", `${left} <span>ngày nữa</span>`);
+    setHtml("statDueNote", `<span>Chấm 2 tuần / 1 lần · lần trước ${escapeHtml(last.date)}</span>`);
+  }
+  setText("statConfirm", audits.filter(item => item.status === "Đã chốt").length);
+
+  const tbody = document.getElementById("auditTableBody");
+  if (!audits.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-cell">Chưa có phiếu đánh giá nào. ${IS_ADMIN ? "Bấm “Chấm 5S mới” để bắt đầu." : ""}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = audits.map(item => `
+    <tr class="${item.status === "Nháp" ? "is-warning" : ""}">
+      <td><b>${escapeHtml(item.id)}</b><small>${item.scored + item.kad}/30 ô${item.kad ? ` · KAD ${item.kad}` : ""}</small></td>
+      <td>${escapeHtml(item.date)}<small>${escapeHtml(item.start || "")}${item.end ? " – " + escapeHtml(item.end) : ""}</small></td>
+      <td>${escapeHtml(item.auditor || "—")}</td>
+      <td class="num"><b>${pct(item.percent)}</b><small>${item.total}/${item.scored * 4} điểm</small></td>
+      <td>${ratingPill(item.rating)}</td>
+      <td>${statusPill(item.status)}${item.confirmed_by ? `<small>${escapeHtml(item.confirmed_by)} · ${escapeHtml(item.confirmed_at)}</small>` : ""}${item.action_count ? `<small><a class="link-btn" href="#" onclick="showActionsOf('${escapeJs(item.id)}'); return false;">${item.action_count} việc khắc phục</a></small>` : ""}</td>
+      <td class="row-actions">
+        <button type="button" class="btn btn-outline btn-sm" onclick="openAudit('${escapeJs(item.id)}')">${item.status === "Nháp" && IS_ADMIN ? "Chấm tiếp" : "Xem"}</button>
+        ${item.status !== "Nháp" ? `<a class="btn btn-outline btn-sm" href="/danh-gia-5s/in/${encodeURIComponent(item.id)}" target="_blank" rel="noopener">In</a>` : ""}
+        ${item.status === "Đã chốt" ? `<button type="button" class="btn btn-red btn-sm" onclick="openConfirm('${escapeJs(item.id)}')">Xác nhận</button>` : ""}
+      </td>
+    </tr>`).join("");
+}
+
+/* ---------- Phiếu chấm ---------- */
+
+function emptyCells() {
+  const cells = {};
+  config.zones.forEach(zone => config.five_s.forEach(item => {
+    const code = `${zone.zone}-${item.s}`;
+    cells[code] = { code, zone: zone.zone, s: item.s, criterion: zone.criteria[item.s], score: "", kad_reason: "", note: "", evidence: "" };
+  }));
+  return cells;
+}
+
+function nowTime() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
+
+function newAudit() {
+  editor = { id: "", status: "Nháp", cells: emptyCells(), evidence: {}, actions: [] };
+  document.getElementById("auditDate").value = todayISO();
+  document.getElementById("auditStart").value = nowTime();
+  document.getElementById("auditEnd").value = "";
+  document.getElementById("auditAuditor").value = config.user || "";
+  document.getElementById("auditNote").value = "";
+  document.getElementById("periodFrom").value = "";
+  document.getElementById("periodTo").value = "";
+  showEditor();
+  loadEvidence();
+}
+
+async function openAudit(id) {
+  showBox("auditMessage", "", "");
+  try {
+    const json = await readJson(await fetch(`/api/5s/audits/${encodeURIComponent(id)}`, { cache: "no-store" }));
+    const audit = json.audit;
+    const cells = {};
+    json.cells.forEach(cell => { cells[cell.code] = cell; });
+    editor = { id: audit.id, status: audit.status, cells, evidence: json.evidence || {}, live: json.evidence_live, actions: json.actions || [], audit };
+
+    document.getElementById("auditDate").value = audit.date_iso;
+    document.getElementById("auditStart").value = audit.start || "";
+    document.getElementById("auditEnd").value = audit.end || "";
+    document.getElementById("auditAuditor").value = audit.auditor || "";
+    document.getElementById("auditNote").value = audit.note || "";
+    document.getElementById("periodFrom").value = json.period.from;
+    document.getElementById("periodTo").value = json.period.to;
+    showEditor();
+  } catch (error) {
+    vluAlert({ title: "Không mở được phiếu", intro: error.message, tone: "danger" });
+  }
+}
+
+function readonly() {
+  return !IS_ADMIN || !editor || editor.status !== "Nháp";
+}
+
+function showEditor() {
+  const card = document.getElementById("auditEditor");
+  card.hidden = false;
+  const ro = readonly();
+  ["auditDate", "auditStart", "auditEnd", "auditAuditor", "auditNote", "periodFrom", "periodTo"].forEach(id => {
+    document.getElementById(id).disabled = ro;
+  });
+  document.getElementById("reloadEvidence").hidden = ro;
+
+  setText("editorTitle", editor.id ? `Phiếu ${editor.id}` : "Phiếu chấm 5S mới");
+  setHtml("editorSub", editor.id
+    ? `${statusPill(editor.status)} ${editor.status === "Nháp" ? "Bằng chứng hệ thống tính theo dữ liệu hiện tại." : "Bằng chứng hệ thống đã lưu lúc chốt phiếu."}`
+    : "Chấm theo thứ tự A → F. Lưu nháp bất cứ lúc nào; chốt khi đủ 30 ô.");
+  renderZones();
+  renderEditorActions();
+  renderBar();
+  card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function closeEditor() {
+  editor = null;
+  document.getElementById("auditEditor").hidden = true;
+  showBox("auditMessage", "", "");
+}
+
+async function loadEvidence() {
+  if (!editor || readonly()) return;
+  const params = new URLSearchParams({
+    lab: "Lab 1",
+    date: document.getElementById("auditDate").value || todayISO(),
+    from: document.getElementById("periodFrom").value,
+    to: document.getElementById("periodTo").value
+  });
+  if (editor.id) params.set("exclude", editor.id);
+  document.querySelectorAll(".evidence-list").forEach(list => { list.innerHTML = `<li class="ev-loading">Đang đối chiếu dữ liệu hệ thống...</li>`; });
+  try {
+    const json = await readJson(await fetch(`/api/5s/evidence?${params}`, { cache: "no-store" }));
+    editor.evidence = json.evidence || {};
+    document.getElementById("periodFrom").value = json.period.from;
+    document.getElementById("periodTo").value = json.period.to;
+  } catch (error) {
+    editor.evidence = {};
+    showBox("auditMessage", `Không tải được bằng chứng hệ thống: ${error.message}`, "error");
+  }
+  renderZones();
+}
+
+function evidenceHtml(code) {
+  const cell = editor.cells[code];
+  const live = editor.evidence[code];
+  if (live && live.length) {
+    return live.map(item => `
+      <li class="ev ev-${item.tone}">${item.link ? `<a href="${escapeHtml(item.link)}" target="_blank" rel="noopener">${escapeHtml(item.text)}</a>` : escapeHtml(item.text)}</li>`).join("");
+  }
+  if (!editor.live && cell.system_evidence) {
+    return cell.system_evidence.split(" | ").map(text => `<li class="ev ev-saved">${escapeHtml(text)}</li>`).join("");
+  }
+  return `<li class="ev ev-none">Không có dữ liệu hệ thống cho ô này – chấm theo hiện trạng</li>`;
+}
+
+function zoneStats(zone) {
+  const cells = config.five_s.map(item => editor.cells[`${zone}-${item.s}`]);
+  const done = cells.filter(cell => cell.score).length;
+  const numbers = cells.filter(cell => /^[0-4]$/.test(cell.score)).map(cell => Number(cell.score));
+  return { done, percent: numbers.length ? Math.round(numbers.reduce((a, b) => a + b, 0) / (4 * numbers.length) * 1000) / 10 : null };
+}
+
+function renderZoneNav() {
+  document.getElementById("zoneNav").innerHTML = config.zones.map(zone => {
+    const stats = zoneStats(zone.zone);
+    return `<a href="#zone-${zone.zone}" class="${stats.done === 5 ? "is-done" : stats.done ? "is-part" : ""}"><b>${zone.zone}</b><span>${escapeHtml(zone.name)}</span><small>${stats.done}/5${stats.percent !== null ? " · " + pct(stats.percent) : ""}</small></a>`;
+  }).join("");
+}
+
+function cellFields(cell) {
+  const ro = readonly();
+  if (!cell.score) return "";
+  if (cell.score === "KAD") {
+    return `<div class="cell-fields"><div class="field"><label>Lý do không áp dụng <b>*</b></label>
+      <input class="input" data-field="kad_reason" data-code="${cell.code}" value="${escapeHtml(cell.kad_reason)}" maxlength="300" ${ro ? "disabled" : ""} placeholder="Không dùng KAD cho “chưa làm”"></div></div>`;
+  }
+  const low = Number(cell.score) <= 2;
+  // Ô 3 điểm: ghi chú không bắt buộc -> thu gọn cho phiếu đỡ dài
+  if (cell.score === "3" && !cell.note && !cell.evidence && !cell._open) {
+    return ro ? "" : `<div class="cell-fields cell-more"><button type="button" class="link-btn" data-more="${cell.code}">+ Thêm ghi chú / minh chứng</button></div>`;
+  }
+  return `<div class="cell-fields">
+    <div class="field"><label>${low ? "Vấn đề cần khắc phục <b>*</b>" : "Ghi chú"}</label>
+      <input class="input" data-field="note" data-code="${cell.code}" value="${escapeHtml(cell.note)}" maxlength="300" ${ro ? "disabled" : ""} placeholder="${low ? "Sai lệch thấy được: ở đâu, như thế nào" : "Không bắt buộc"}"></div>
+    <div class="field"><label>Mã ảnh / link minh chứng ${low ? "<b>*</b>" : cell.score === "4" ? "<small>(nên có)</small>" : ""}</label>
+      <input class="input" data-field="evidence" data-code="${cell.code}" value="${escapeHtml(cell.evidence)}" maxlength="300" ${ro ? "disabled" : ""} placeholder="vd IMG_2031 hoặc link Drive"></div>
+  </div>`;
+}
+
+function renderZones() {
+  if (!editor) return;
+  const ro = readonly();
+  renderZoneNav();
+  document.getElementById("zoneCards").innerHTML = config.zones.map(zone => `
+    <section class="zone-card" id="zone-${zone.zone}">
+      <header><span class="zone-letter">${zone.zone}</span><div><b>${escapeHtml(zone.name)}</b><small id="zoneSum-${zone.zone}"></small></div></header>
+      ${config.five_s.map(item => {
+        const code = `${zone.zone}-${item.s}`;
+        const cell = editor.cells[code];
+        return `
+        <div class="crit-row ${cell.score === "" ? "" : /^[0-2]$/.test(cell.score) ? "is-low" : "is-set"}" id="row-${code}">
+          <div class="crit-main">
+            <div class="crit-title"><span class="s-tag s-${item.s.toLowerCase()}">${item.s}</span><span class="crit-code">${code}</span><b>${escapeHtml(item.name)}</b></div>
+            <p class="crit-text">${escapeHtml(cell.criterion)}</p>
+            <ul class="evidence-list">${evidenceHtml(code)}</ul>
+          </div>
+          <div class="crit-score" role="radiogroup" aria-label="Điểm ô ${code}">
+            ${["0", "1", "2", "3", "4", "KAD"].map(score => `
+              <label class="score-btn score-${score.toLowerCase()} ${cell.score === score ? "is-on" : ""}" title="${SCORE_TEXT[score]}">
+                <input type="radio" name="score-${code}" value="${score}" ${cell.score === score ? "checked" : ""} ${ro ? "disabled" : ""} data-code="${code}">
+                <span>${score}</span>
+              </label>`).join("")}
+            <small class="score-label">${cell.score ? SCORE_TEXT[cell.score] : "Chưa chấm"}</small>
+          </div>
+          ${cellFields(cell)}
+        </div>`;
+      }).join("")}
+    </section>`).join("");
+  config.zones.forEach(zone => updateZoneSum(zone.zone));
+}
+
+function updateZoneSum(zone) {
+  const stats = zoneStats(zone);
+  setText(`zoneSum-${zone}`, `${stats.done}/5 ô${stats.percent !== null ? " · " + pct(stats.percent) : ""}`);
+}
+
+function summary() {
+  const cells = Object.values(editor.cells);
+  const numbers = cells.filter(cell => /^[0-4]$/.test(cell.score));
+  const total = numbers.reduce((sum, cell) => sum + Number(cell.score), 0);
+  const percent = numbers.length ? Math.round(total / (4 * numbers.length) * 1000) / 10 : null;
+  const rating = percent === null ? "" : percent >= 85 ? "Tốt" : percent >= 70 ? "Đạt" : "Cần cải thiện";
+  const byS = {};
+  config.five_s.forEach(item => {
+    const list = numbers.filter(cell => cell.s === item.s);
+    byS[item.s] = list.length ? Math.round(list.reduce((sum, cell) => sum + Number(cell.score), 0) / (4 * list.length) * 100) : null;
+  });
+  return {
+    total, percent, rating, byS,
+    done: cells.filter(cell => cell.score).length,
+    kad: cells.filter(cell => cell.score === "KAD").length,
+    low: numbers.filter(cell => Number(cell.score) <= 2).length
+  };
+}
+
+function renderBar() {
+  if (!editor) return;
+  const sum = summary();
+  setText("barPercent", pct(sum.percent));
+  setHtml("barRating", sum.rating ? ratingPill(sum.rating) : "");
+  setHtml("barProgress", `<b>${sum.done}/30</b> ô · KAD ${sum.kad} · ô ≤ 2: <b>${sum.low}</b>`);
+  setHtml("barS", config.five_s.map(item => `
+    <span title="${item.s} ${escapeHtml(item.name)}"><i style="height:${sum.byS[item.s] === null ? 0 : sum.byS[item.s]}%"></i><b>${item.s}</b></span>`).join(""));
+
+  const buttons = [];
+  if (!readonly()) {
+    if (editor.id) buttons.push(`<button type="button" class="btn btn-outline btn-sm" onclick="cancelDraft()">Hủy nháp</button>`);
+    buttons.push(`<button type="button" class="btn btn-outline" id="saveDraftBtn" onclick="saveAudit(false)">Lưu nháp</button>`);
+    buttons.push(`<button type="button" class="btn btn-red" id="finalizeBtn" onclick="saveAudit(true)">Chốt phiếu</button>`);
+  } else if (editor.id) {
+    buttons.push(`<a class="btn btn-outline" href="/danh-gia-5s/in/${encodeURIComponent(editor.id)}" target="_blank" rel="noopener">In phiếu</a>`);
+    if (editor.status === "Đã chốt") buttons.push(`<button type="button" class="btn btn-red" onclick="openConfirm('${escapeJs(editor.id)}')">GV xác nhận</button>`);
+  }
+  setHtml("barButtons", buttons.join(""));
+}
+
+function renderEditorActions() {
+  const box = document.getElementById("editorActions");
+  if (!editor || !editor.actions || !editor.actions.length) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = `<b>Việc khắc phục từ phiếu này</b>` + editor.actions.map(action => `
+    <a href="?tab=khac-phuc&q=${encodeURIComponent(action.id)}" class="mini-action ${action.status === "Đã khắc phục" ? "is-done" : action.overdue ? "is-late" : ""}">
+      <span class="err-code">${escapeHtml(action.code)}</span>${escapeHtml(action.status)}${action.overdue ? " · quá hạn" : ""}
+    </a>`).join("");
+}
+
+document.getElementById("zoneCards").addEventListener("change", event => {
+  const input = event.target;
+  if (!editor || !input.dataset.code) return;
+  const cell = editor.cells[input.dataset.code];
+  if (input.type === "radio") {
+    cell.score = input.value;
+    const row = document.getElementById(`row-${cell.code}`);
+    // Vẽ lại riêng hàng này (giữ vị trí cuộn)
+    refreshRowFields(cell.code);
+    row.className = `crit-row ${/^[0-2]$/.test(cell.score) ? "is-low" : "is-set"}`;
+    row.querySelectorAll(".score-btn").forEach(label => label.classList.toggle("is-on", label.querySelector("input").value === cell.score));
+    row.querySelector(".score-label").textContent = SCORE_TEXT[cell.score];
+    updateZoneSum(cell.zone);
+    renderZoneNav();
+    renderBar();
+  }
+});
+
+function refreshRowFields(code) {
+  const cell = editor.cells[code];
+  const row = document.getElementById(`row-${code}`);
+  const fields = row.querySelector(".cell-fields");
+  if (fields) fields.remove();
+  row.insertAdjacentHTML("beforeend", cellFields(cell));
+}
+
+document.getElementById("zoneCards").addEventListener("click", event => {
+  const more = event.target.closest("[data-more]");
+  if (!more || !editor) return;
+  editor.cells[more.dataset.more]._open = true;
+  refreshRowFields(more.dataset.more);
+  const input = document.querySelector(`#row-${more.dataset.more} input[data-field="note"]`);
+  if (input) input.focus();
+});
+
+document.getElementById("zoneCards").addEventListener("input", event => {
+  const input = event.target;
+  if (!editor || !input.dataset.code || !input.dataset.field) return;
+  editor.cells[input.dataset.code][input.dataset.field] = input.value;
+});
+
+document.getElementById("auditDate").addEventListener("change", () => {
+  document.getElementById("periodFrom").value = "";
+  document.getElementById("periodTo").value = "";
+  loadEvidence();
+});
+
+async function saveAudit(finalize) {
+  if (!editor) return;
+  if (finalize) {
+    const sum = summary();
+    const ok = await vluConfirm({
+      title: "Chốt phiếu đánh giá?",
+      intro: `Điểm 5S ${pct(sum.percent)} (${sum.rating || "--"}). Sau khi chốt phiếu bị khóa; ${sum.low} ô ≤ 2 sẽ thành việc khắc phục và hệ thống lưu lại bằng chứng hệ thống tại thời điểm này.`,
+      okText: "Chốt phiếu"
+    });
+    if (!ok) return;
+  }
+
+  const payload = {
+    id: editor.id,
+    finalize,
+    lab: "Lab 1",
+    date: document.getElementById("auditDate").value,
+    start: document.getElementById("auditStart").value,
+    end: document.getElementById("auditEnd").value,
+    auditor: document.getElementById("auditAuditor").value.trim(),
+    period_from: document.getElementById("periodFrom").value,
+    period_to: document.getElementById("periodTo").value,
+    note: document.getElementById("auditNote").value.trim(),
+    cells: Object.values(editor.cells).map(cell => ({
+      code: cell.code, score: cell.score, kad_reason: cell.kad_reason, note: cell.note, evidence: cell.evidence
+    }))
+  };
+
+  document.querySelectorAll("#barButtons button").forEach(button => { button.disabled = true; });
+  showBox("auditMessage", finalize ? "Đang chốt phiếu và tạo việc khắc phục..." : "Đang lưu nháp...", "success");
+
+  try {
+    const response = await fetch("/api/5s/audits", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+    });
+    const json = await response.json().catch(() => ({}));
+    if (!response.ok || !json.success) {
+      const errors = json.errors || [];
+      showBox("auditMessage", "", "");
+      focusFirstError(errors);
+      vluAlert({
+        title: json.error || "Không lưu được phiếu",
+        intro: errors.length ? "Bổ sung các mục sau rồi chốt lại (ô cần bổ sung đã được tô đỏ):" : "",
+        rows: errors.slice(0, 12).map(item => {
+          const match = item.match(/^Ô ([A-F]-S[1-5])[^:]*: (.*)$/);
+          return match ? [match[1], match[2]] : ["Phiếu", item];
+        }),
+        note: errors.length > 12 ? `… và ${errors.length - 12} mục khác.` : "",
+        tone: "danger"
+      });
+      return;
+    }
+
+    await loadAudits();
+    if (finalize) {
+      await loadActions();
+      await openAudit(json.id);
+      vluAlert({
+        title: "Đã chốt phiếu",
+        intro: `Điểm 5S ${pct(json.percent)} – ${json.rating}. ${json.actions_created.length ? `Đã tạo ${json.actions_created.length} việc khắc phục (thẻ Khắc phục).` : "Không có ô ≤ 2."} Phiếu chờ GV phụ trách xác nhận.`,
+        tone: "success"
+      });
+      loadCompare();
+    } else {
+      editor.id = json.id;
+      showBox("auditMessage", `Đã lưu nháp ${json.id} lúc ${nowTime()}.`, "success");
+      setText("editorTitle", `Phiếu ${json.id}`);
+    }
+  } catch (error) {
+    showBox("auditMessage", error.message, "error");
+  } finally {
+    renderBar();
+  }
+}
+
+function focusFirstError(errors) {
+  document.querySelectorAll(".crit-row.is-error").forEach(row => row.classList.remove("is-error"));
+  const codes = new Set();
+  errors.forEach(item => { const match = item.match(/^Ô ([A-F]-S[1-5])/); if (match) codes.add(match[1]); });
+  Object.values(editor.cells).filter(cell => !cell.score).forEach(cell => codes.add(cell.code));
+  codes.forEach(code => { const row = document.getElementById(`row-${code}`); if (row) row.classList.add("is-error"); });
+  const first = Object.keys(editor.cells).find(code => codes.has(code));
+  const row = first && document.getElementById(`row-${first}`);
+  if (row) row.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+async function cancelDraft() {
+  const ok = await vluConfirm({ title: "Hủy phiếu nháp?", intro: `Phiếu ${editor.id} sẽ bị hủy (không xóa khỏi sheet).`, okText: "Hủy phiếu" });
+  if (!ok) return;
+  try {
+    await postJson("/api/5s/audits/cancel", { id: editor.id });
+    closeEditor();
+    loadAudits();
+  } catch (error) {
+    showBox("auditMessage", error.message, "error");
+  }
+}
+
+/* ---------- GV xác nhận ---------- */
+
+function openConfirm(id) {
+  const audit = audits.find(item => item.id === id) || (editor && editor.audit);
+  if (!audit) return;
+  document.getElementById("confirmId").value = id;
+  document.getElementById("confirmName").value = IS_ADMIN ? "" : (config.user || "");
+  showBox("confirmMessage", "", "");
+  setHtml("confirmInfo", `
+    <div><span>Phiếu</span><b>${escapeHtml(id)}</b></div>
+    <div><span>Ngày chấm</span><b>${escapeHtml(audit.date)}</b></div>
+    <div><span>Điểm 5S</span><b>${pct(audit.percent)} – ${escapeHtml(audit.rating || "")}</b></div>
+    <div><span>Người chấm</span><b>${escapeHtml(audit.auditor || "—")}</b></div>`);
+  openModal("confirmModal");
+}
+
+document.getElementById("confirmForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const name = document.getElementById("confirmName").value.trim();
+  if (!name) return showBox("confirmMessage", "Ghi tên giảng viên xác nhận.", "error");
+  const button = document.getElementById("confirmSave");
+  button.disabled = true;
+  try {
+    await postJson("/api/5s/audits/confirm", { id: document.getElementById("confirmId").value, confirmer: name });
+    closeModal("confirmModal");
+    await loadAudits();
+    if (editor && editor.id === document.getElementById("confirmId").value) openAudit(editor.id);
+    loadCompare();
+  } catch (error) {
+    showBox("confirmMessage", error.message, "error");
+  } finally {
+    button.disabled = false;
+  }
+});
+
+/* ---------- Khắc phục ---------- */
+
+function renderRepeats(json) {
+  const openCodes = new Set(actions.filter(item => item.status !== "Đã khắc phục").map(item => item.code));
+  const list = repeats.filter(item => !openCodes.has(item.code));
+  document.getElementById("repeatCard").hidden = !list.length;
+  setText("repeatNote", `Cùng mã lỗi từ ${json.repeat_min} lượt bàn giao trở lên trong ${json.repeat_window} ngày, chưa có việc khắc phục (SOP-02)`);
+  setHtml("repeatList", list.map(item => {
+    const [zone, s] = item.code.split("-");
+    return `<div class="repeat-item"><span class="err-code">${escapeHtml(item.code)}</span><span>${escapeHtml(zoneOf(zone).name)} · ${escapeHtml(sName(s))}</span><b>${item.count} lượt</b>
+      ${IS_ADMIN ? `<button type="button" class="btn btn-red btn-sm" onclick="openActionAdd('${item.code}', ${item.count})">Tạo việc</button>` : ""}</div>`;
+  }).join(""));
+}
+
+function applyActionFilter() {
+  const keyword = normalizeSearch(document.getElementById("actionSearch").value);
+  const status = document.getElementById("actionStatus").value;
+  const source = document.getElementById("actionSource").value;
+  const open = actions.filter(item => item.status !== "Đã khắc phục");
+  setText("tabActionCount", open.length);
+  setText("statActions", open.length);
+  setHtml("statActionsNote", `<span><b>${actions.filter(item => item.overdue).length}</b> quá hạn · ${actions.length - open.length} đã khắc phục</span>`);
+
+  const rows = actions.filter(item => {
+    if (keyword && !normalizeSearch(`${item.id} ${item.code} ${item.problem} ${item.todo} ${item.owner} ${item.source_id} ${item.incident_id}`).includes(keyword)) return false;
+    if (status === "mo" && item.status === "Đã khắc phục") return false;
+    if (status === "qua-han" && !item.overdue) return false;
+    if (status === "Đã khắc phục" && item.status !== status) return false;
+    if (source && item.source !== source) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById("actionTableBody");
+  if (!actions.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-cell">Chưa có việc khắc phục. Việc được tạo khi chốt phiếu (ô ≤ 2) hoặc từ lỗi lặp lại khi bàn giao.</td></tr>`;
+    return;
+  }
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-cell">Không có việc phù hợp với bộ lọc</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(item => {
+    const [zone, s] = (item.code || "-").split("-");
+    const pill = item.status === "Đã khắc phục" ? "pill-green" : item.overdue ? "pill-red" : item.status === "Đang xử lý" ? "pill-amber" : "pill-gray";
+    const sourceLink = item.source === "Đánh giá 5S định kỳ"
+      ? `<a class="link-btn" href="#" onclick="openAudit('${escapeJs(item.source_id)}'); setPageTab('phieu'); return false;">${escapeHtml(item.source_id)}</a>`
+      : item.source === "Lỗi lặp lại khi bàn giao"
+        ? `<a class="link-btn" href="/cleaning-report">Bàn giao ${escapeHtml(item.source_id || "")}</a>` : `<span class="muted-text">${escapeHtml(item.source)}</span>`;
+    return `
+      <tr class="${item.overdue ? "is-alert" : ""}">
+        <td><b>${escapeHtml(item.id)}</b><small>${escapeHtml(item.created_at)}</small><small>${sourceLink}</small></td>
+        <td><span class="err-code">${escapeHtml(item.code)}</span><small>${escapeHtml(zoneOf(zone).name)} · ${escapeHtml(sName(s))}</small></td>
+        <td class="wrap"><b>${escapeHtml(item.problem)}</b>${item.evidence ? `<small>Minh chứng: ${/^https?:/i.test(item.evidence) ? `<a class="link-btn" href="${escapeHtml(item.evidence)}" target="_blank" rel="noopener">mở</a>` : escapeHtml(item.evidence)}</small>` : ""}</td>
+        <td class="wrap">${escapeHtml(item.todo || "—")}${item.result ? `<small>Kết quả: ${escapeHtml(item.result)}</small>` : ""}</td>
+        <td>${escapeHtml(item.owner || "—")}<small>Hạn ${escapeHtml(item.due || "—")}</small></td>
+        <td><span class="pill ${pill}">${escapeHtml(item.status)}${item.overdue ? " · quá hạn" : ""}</span>${item.confirmed_by ? `<small>${escapeHtml(item.confirmed_by)} · ${escapeHtml(item.confirmed_at)}</small>` : ""}${item.incident_id ? `<small>Sự cố <a class="link-btn" href="/vat-tu?tab=su-co&q=${encodeURIComponent(item.incident_id)}">${escapeHtml(item.incident_id)}</a> · ${escapeHtml(item.incident_status || "")}</small>` : ""}</td>
+        <td>${IS_ADMIN ? `<button type="button" class="btn btn-outline btn-sm" onclick="openActionModal('${escapeJs(item.id)}')">Cập nhật</button>` : ""}</td>
+      </tr>`;
+  }).join("");
+}
+
+function showActionsOf(auditId) {
+  document.getElementById("actionSearch").value = auditId;
+  document.getElementById("actionStatus").value = "";
+  setPageTab("khac-phuc");
+  applyActionFilter();
+}
+
+function incidentOptions(selected, zone) {
+  const list = incidents.filter(item => !zone || !item.zone || item.zone === zone || item.id === selected);
+  return `<option value="">Không liên kết</option>` + list.map(item =>
+    `<option value="${escapeHtml(item.id)}" ${item.id === selected ? "selected" : ""}>${escapeHtml(item.id)} · ${escapeHtml(item.name)} · ${escapeHtml(item.status)}</option>`).join("");
+}
+
+function updateAddCriterion() {
+  const zone = document.getElementById("addZone").value;
+  const s = document.getElementById("addS").value;
+  setText("addCriterion", `Tiêu chí ${zone}-${s}: ${zoneOf(zone).criteria[s] || ""}`);
+  const current = document.getElementById("addIncident").value;
+  document.getElementById("addIncident").innerHTML = incidentOptions(current, zone);
+}
+
+function addDays(days) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function openActionAdd(code, count) {
+  document.getElementById("actionAddForm").reset();
+  showBox("addMessage", "", "");
+  const [zone, s] = (code || "B-S1").split("-");
+  document.getElementById("addZone").value = zone;
+  document.getElementById("addS").value = s;
+  document.getElementById("addOwner").value = config.user || "";
+  document.getElementById("addDue").value = addDays(config.action_days || 7);
+  document.getElementById("addSource").value = code ? "Lỗi lặp lại khi bàn giao" : "KTV ghi nhận";
+  document.getElementById("addSourceId").value = code ? `${count} lượt / 14 ngày` : "";
+  if (code) document.getElementById("addProblem").value = `${code} lặp lại ${count} lượt bàn giao trong 14 ngày`;
+  setText("actionAddSub", code
+    ? `Lỗi lặp lại khi bàn giao: ${code} – ${count} lượt (SOP-02: lỗi lặp lại ghi KHAC_PHUC).`
+    : "KTV tự ghi nhận sai lệch 5S cần khắc phục.");
+  updateAddCriterion();
+  openModal("actionAddModal");
+}
+
+["addZone", "addS"].forEach(id => document.getElementById(id).addEventListener("change", updateAddCriterion));
+
+document.getElementById("actionAddForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const problem = document.getElementById("addProblem").value.trim();
+  if (!problem) return showBox("addMessage", "Ghi vấn đề cần khắc phục.", "error");
+  if (!document.getElementById("addDue").value) return showBox("addMessage", "Chọn hạn khắc phục.", "error");
+  const button = document.getElementById("addSave");
+  button.disabled = true;
+  try {
+    await postJson("/api/5s/actions", {
+      code: `${document.getElementById("addZone").value}-${document.getElementById("addS").value}`,
+      problem,
+      todo: document.getElementById("addTodo").value.trim(),
+      evidence: document.getElementById("addEvidence").value.trim(),
+      owner: document.getElementById("addOwner").value.trim(),
+      due: document.getElementById("addDue").value,
+      incident_id: document.getElementById("addIncident").value,
+      source: document.getElementById("addSource").value,
+      source_id: document.getElementById("addSourceId").value,
+      lab: "Lab 1"
+    });
+    closeModal("actionAddModal");
+    await loadActions();
+    loadSystemNotifications();
+  } catch (error) {
+    showBox("addMessage", error.message, "error");
+  } finally {
+    button.disabled = false;
+  }
+});
+
+function openActionModal(id) {
+  const item = actions.find(entry => entry.id === id);
+  if (!item) return;
+  document.getElementById("actionForm").reset();
+  showBox("actionMessage", "", "");
+  document.getElementById("actionId").value = id;
+  setText("actionSub", `${item.id} · ${item.source}${item.source_id ? " " + item.source_id : ""}`);
+  setHtml("actionInfo", `
+    <div><span>Mã lỗi</span><b>${escapeHtml(item.code)}</b></div>
+    <div><span>Tạo lúc</span><b>${escapeHtml(item.created_at)}</b></div>
+    <div class="full"><span>Vấn đề</span><b>${escapeHtml(item.problem)}</b></div>
+    ${item.evidence ? `<div class="full"><span>Minh chứng</span><b>${escapeHtml(item.evidence)}</b></div>` : ""}`);
+  const radio = document.querySelector(`[name="actionStatus"][value="${item.status}"]`);
+  if (radio) radio.checked = true;
+  document.getElementById("actionTodo").value = item.todo;
+  document.getElementById("actionOwner").value = item.owner;
+  document.getElementById("actionDue").value = item.due_iso;
+  document.getElementById("actionResult").value = item.result;
+  document.getElementById("actionIncident").innerHTML = incidentOptions(item.incident_id, item.zone);
+  openModal("actionModal");
+}
+
+document.getElementById("actionForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const status = document.querySelector('[name="actionStatus"]:checked');
+  const result = document.getElementById("actionResult").value.trim();
+  if (!status) return showBox("actionMessage", "Chọn trạng thái.", "error");
+  if (status.value === "Đã khắc phục" && !result) return showBox("actionMessage", "Ghi kết quả khắc phục trước khi xác nhận.", "error");
+  const button = document.getElementById("actionSave");
+  button.disabled = true;
+  try {
+    await postJson("/api/5s/actions/update", {
+      id: document.getElementById("actionId").value,
+      status: status.value,
+      todo: document.getElementById("actionTodo").value.trim(),
+      owner: document.getElementById("actionOwner").value.trim(),
+      due: document.getElementById("actionDue").value,
+      incident_id: document.getElementById("actionIncident").value,
+      result
+    });
+    closeModal("actionModal");
+    await loadActions();
+    loadSystemNotifications();
+  } catch (error) {
+    showBox("actionMessage", error.message, "error");
+  } finally {
+    button.disabled = false;
+  }
+});
+
+function exportActions() {
+  exportExcel("khac_phuc_5s",
+    ["Mã khắc phục", "Ngày tạo", "Nguồn", "Mã nguồn", "Mã lỗi", "Vấn đề", "Minh chứng", "Việc cần làm", "Người phụ trách", "Hạn", "Trạng thái", "Quá hạn", "Mã sự cố", "Kết quả", "Người xác nhận", "Ngày xác nhận"],
+    actions.map(item => [item.id, item.created_at, item.source, item.source_id, item.code, item.problem, item.evidence, item.todo,
+      item.owner, item.due, item.status, item.overdue ? "Có" : "", item.incident_id, item.result, item.confirmed_by, item.confirmed_at]));
+}
+
+["actionStatus", "actionSource"].forEach(id => document.getElementById(id).addEventListener("change", applyActionFilter));
+document.getElementById("actionSearch").addEventListener("input", applyActionFilter);
+
+/* ---------- Xu hướng các lần chấm ---------- */
+
+async function loadCompare() {
+  try {
+    const json = await readJson(await fetch("/api/5s/summary", { cache: "no-store" }));
+    renderCompare(json);
+  } catch (error) {
+    setHtml("compareBody", `<div class="empty-box">Không tải được dữ liệu so sánh: ${escapeHtml(error.message)}</div>`);
+  }
+}
+
+function barCell(value) {
+  if (value === null || value === undefined) return `<td class="cmp-cell muted-text">—</td>`;
+  const tone = value >= 85 ? "good" : value >= 70 ? "mid" : "bad";
+  return `<td class="cmp-cell"><div class="cmp-bar ${tone}"><i style="width:${value}%"></i></div><b>${pct(value)}</b></td>`;
+}
+
+function renderCompare(json) {
+  const list = json.recent || [];
+  if (!list.length) {
+    setHtml("compareBody", `<div class="empty-box">Chưa có phiếu đã chốt. Sau 2 lần chấm trở lên sẽ thấy điểm tăng / giảm theo từng S và từng khu.</div>`);
+    return;
+  }
+  const first = list[0];
+  const lastStage = list[list.length - 1];
+  const delta = (a, b) => (a === null || b === null || a === undefined || b === undefined) ? "—"
+    : `<span class="delta ${b - a >= 0 ? "up" : "down"}">${b - a >= 0 ? "+" : ""}${String(Math.round((b - a) * 10) / 10).replace(".", ",")}</span>`;
+
+  const head = `<tr><th></th>${list.map(item => `<th>${escapeHtml(item.date)}<small>${escapeHtml(item.id)}</small></th>`).join("")}${list.length > 1 ? `<th>Thay đổi<small>${escapeHtml(first.date)} → ${escapeHtml(lastStage.date)}</small></th>` : ""}</tr>`;
+  const row = (label, getter) => `<tr><th>${label}</th>${list.map(item => barCell(getter(item))).join("")}${list.length > 1 ? `<td>${delta(getter(first), getter(lastStage))}</td>` : ""}</tr>`;
+
+  setHtml("compareBody", `
+    <div class="compare-wrap"><table class="compare5s">
+      <thead>${head}</thead>
+      <tbody>
+        ${row("<b>Điểm 5S chung</b>", item => item.percent)}
+        <tr class="group-row"><th colspan="${list.length + 2}">Theo bước 5S</th></tr>
+        ${json.five_s.map(item => row(`${item.s} ${escapeHtml(item.name)}`, audit => audit.by_s[item.s])).join("")}
+        <tr class="group-row"><th colspan="${list.length + 2}">Theo khu</th></tr>
+        ${json.zones.map(zone => row(`${zone.zone} – ${escapeHtml(zone.name)}`, audit => audit.by_zone[zone.zone])).join("")}
+      </tbody>
+    </table></div>
+    <p class="matrix-note">Mốc xếp loại: ≥ 85% Tốt · 70 – &lt; 85% Đạt · &lt; 70% Cần cải thiện. Tổng ${json.audits.length} phiếu đã chốt; việc khắc phục: ${json.actions.done}/${json.actions.total} đã xong, ${json.actions.overdue} quá hạn. Biểu đồ xu hướng ở trang <a class="link-btn" href="/lab-performance#hieu-qua-5s">Hiệu suất</a>.</p>`);
+}
+
+/* ---------- Thẻ ---------- */
+
+function setPageTab(tab) {
+  const name = ["phieu", "khac-phuc", "so-sanh"].includes(tab) ? tab : "phieu";
+  document.querySelectorAll(".page-tabs button").forEach(button => {
+    const on = button.dataset.tab === name;
+    button.classList.toggle("active", on);
+    button.setAttribute("aria-selected", on ? "true" : "false");
+  });
+  document.querySelectorAll(".page-tab-panel").forEach(panel => { panel.hidden = panel.id !== `panel-${name}`; });
+  const params = new URLSearchParams(location.search);
+  if (name === "phieu") params.delete("tab"); else params.set("tab", name);
+  ["q", "code", "n", "new", "id"].forEach(key => params.delete(key));
+  history.replaceState(null, "", `${location.pathname}${params.toString() ? "?" + params : ""}`);
+}
+
+/* ---------- Khởi tạo ---------- */
+
+(async function init() {
+  const params = new URLSearchParams(location.search);
+  try {
+    await loadConfig();
+  } catch (error) {
+    setHtml("auditTableBody", `<tr><td colspan="8" class="empty-cell">Không tải được cấu hình: ${escapeHtml(error.message)}</td></tr>`);
+    return;
+  }
+
+  const tab = params.get("tab");
+  const query = params.get("q");
+  const code = params.get("code");
+  const count = params.get("n");
+  const auditId = params.get("id");
+  const wantNew = params.get("new");
+  setPageTab(tab);
+
+  await Promise.all([loadAudits(), loadActions()]);
+  loadCompare();
+
+  if (query) {
+    document.getElementById("actionSearch").value = query;
+    document.getElementById("actionStatus").value = "";
+    applyActionFilter();
+  }
+  if (code && IS_ADMIN) openActionAdd(code.toUpperCase(), count || 0);
+  if (auditId) openAudit(auditId);
+  if (wantNew && IS_ADMIN) {
+    const draft = audits.find(item => item.status === "Nháp");
+    if (draft) openAudit(draft.id); else newAudit();
+  }
+})();
+</script>
+{% endblock %}
