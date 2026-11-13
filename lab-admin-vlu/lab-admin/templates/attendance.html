@@ -1301,5 +1301,70 @@ document.addEventListener("DOMContentLoaded", function () {
 
   setInterval(loadSystemNotifications, 60000);
 });
+/* =========================
+   TỰ CẬP NHẬT ĐIỂM DANH (không cần F5)
+   - 30 giây/lần và mỗi khi quay lại tab, trang tự lấy trạng thái mới nhất
+     (điểm danh của KTV khác, lượt đăng ký mới, sinh viên được bổ sung).
+   - Giữ nguyên bộ lọc, ô tìm kiếm và các nhóm đang mở.
+   - Không tải lại khi đang lưu, đang mở ô chọn trạng thái hoặc đang mở hộp thoại.
+   Đổi chu kỳ: sửa ATTENDANCE_REFRESH_MS (không nên dưới 20 giây vì giới hạn đọc Google Sheets).
+========================= */
+
+const ATTENDANCE_REFRESH_MS = 30000;
+let attendanceSaving = 0;
+let attendanceVersion = 0;
+
+const updateAttendanceStatusBase = updateAttendanceStatus;
+updateAttendanceStatus = async function (rowId, status) {
+  attendanceVersion++;
+  attendanceSaving++;
+  try {
+    return await updateAttendanceStatusBase(rowId, status);
+  } finally {
+    attendanceSaving--;
+  }
+};
+
+// Tải lại toàn bộ (sau khi thêm / gỡ sinh viên) cũng tính là 1 thay đổi
+const loadAttendanceBookingsBase = loadAttendanceBookings;
+loadAttendanceBookings = async function () {
+  attendanceVersion++;
+  attendanceSaving++;
+  try {
+    return await loadAttendanceBookingsBase();
+  } finally {
+    attendanceSaving--;
+  }
+};
+
+async function refreshAttendanceSilently() {
+  if (document.hidden || attendanceSaving > 0) return;
+  if (document.body.classList.contains("modal-open")) return;
+
+  const active = document.activeElement;
+  if (active && active.classList && active.classList.contains("status-select")) return;
+
+  const versionAtStart = attendanceVersion;
+
+  try {
+    const res = await fetch("/api/attendance-bookings");
+    const json = await res.json();
+
+    // Trong lúc chờ mà KTV vừa đổi trạng thái -> bỏ kết quả này, lần sau lấy lại
+    if (!json.success || attendanceSaving > 0 || versionAtStart !== attendanceVersion) return;
+
+    const fresh = normalizeAttendanceData(json.data || []);
+    fresh.sort((a, b) =>
+      parseAttendanceDateTime(a.date_input, a.shift) - parseAttendanceDateTime(b.date_input, b.shift));
+
+    attendanceData = fresh;
+    applyAttendanceFilter();
+  } catch (error) {
+    console.error("REFRESH ATTENDANCE ERROR:", error);
+  }
+}
+
+setInterval(refreshAttendanceSilently, ATTENDANCE_REFRESH_MS);
+document.addEventListener("visibilitychange", refreshAttendanceSilently);
 </script>
 {% endblock %}
